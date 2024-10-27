@@ -7,7 +7,7 @@ public class AnimatedSprites : MonoBehaviour
 {
     public SpriteRenderer spriteRenderer { get; private set; }
     public Sprite[] sprites;
-    public float framesPerSecond = 0.25f;
+    public float animationTime = 0.25f;
     public int animationFrame { get; private set; }
     public bool loop = true;
 
@@ -17,7 +17,7 @@ public class AnimatedSprites : MonoBehaviour
     }
 
     private void Start(){
-        InvokeRepeating(nameof(Advance), this.animationFrame, this.animationFrame);
+        InvokeRepeating(nameof(Advance), 0f, animationTime);
     }
 
     private void Advance()
@@ -28,19 +28,28 @@ public class AnimatedSprites : MonoBehaviour
 
         this.animationFrame++;
 
-        if (this.animationFrame >= this.sprites.Length && this.loop)
+        if (this.animationFrame >= this.sprites.Length)
         {
-            this.animationFrame = 0;
+            if (this.loop)
+            {
+                this.animationFrame = 0; // Loop back to the first frame
+            }
+            else
+            {
+                CancelInvoke(nameof(Advance)); // Stop animation if not looping
+                return;
+            }
         }
 
-        if (this.animationFrame >= 0 && this.animationFrame < this.sprites.Length){
+        if (this.animationFrame >= 0 && this.animationFrame < this.sprites.Length)
+        {
             this.spriteRenderer.sprite = this.sprites[this.animationFrame];
         }
     }
 
     public void Restart()
     {
-        this.animationFrame = -1;
+        this.animationFrame = 0;
 
         Advance();   
     }
