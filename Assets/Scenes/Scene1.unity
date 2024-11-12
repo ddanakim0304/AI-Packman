@@ -122,6 +122,17 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!114 &25707881 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9093172915997962136, guid: 4630c6cee20d44d869a5cb4a01c44090, type: 3}
+  m_PrefabInstance: {fileID: 1814723331}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d1191079784c40359fce5829f6c6274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &58271395
 GameObject:
   m_ObjectHideFlags: 0
@@ -221,6 +232,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4554900268108178229, guid: 9817199d69e044646b89c99662e181b5, type: 3}
+      propertyPath: duration
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 7455338502059244613, guid: 9817199d69e044646b89c99662e181b5, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2
@@ -261,6 +276,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7869347127706966833, guid: 9817199d69e044646b89c99662e181b5, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 656308241}
     - target: {fileID: 8819917818630735159, guid: 9817199d69e044646b89c99662e181b5, type: 3}
       propertyPath: m_Name
       value: Ghost_Cyan
@@ -4061,7 +4080,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589bd1e63045b4e3997d03c525507826, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ghosts: []
+  ghosts:
+  - {fileID: 1552622146}
+  - {fileID: 25707881}
+  - {fileID: 2090932344}
+  - {fileID: 1456563231}
   pacman: {fileID: 656308243}
   pellets: {fileID: 813467038}
 --- !u!1 &1398499025
@@ -9267,6 +9290,28 @@ TilemapCollider2D:
   m_MaximumTileChangeCount: 1000
   m_ExtrusionFactor: 0
   m_UseDelaunayMesh: 0
+--- !u!114 &1456563231 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8865373448656147578, guid: 66ce666aac68d45a684d73516a9c9cb7, type: 3}
+  m_PrefabInstance: {fileID: 2077738158}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d1191079784c40359fce5829f6c6274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1552622146 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7869347127706966833, guid: 9817199d69e044646b89c99662e181b5, type: 3}
+  m_PrefabInstance: {fileID: 314172061}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d1191079784c40359fce5829f6c6274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1677900594
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9275,6 +9320,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2538635990530796742, guid: 3b7c4606a5ff84cefb99ed4dfce697c7, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 656308241}
     - target: {fileID: 2988187424290655154, guid: 3b7c4606a5ff84cefb99ed4dfce697c7, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -9319,6 +9368,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Ghost_Pink
       objectReference: {fileID: 0}
+    - target: {fileID: 8158486051007075522, guid: 3b7c4606a5ff84cefb99ed4dfce697c7, type: 3}
+      propertyPath: duration
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9332,6 +9385,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3184811000635283356, guid: 4630c6cee20d44d869a5cb4a01c44090, type: 3}
+      propertyPath: duration
+      value: 16
+      objectReference: {fileID: 0}
     - target: {fileID: 7593734814854525342, guid: 4630c6cee20d44d869a5cb4a01c44090, type: 3}
       propertyPath: m_Name
       value: Ghost_Orange
@@ -9376,6 +9433,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9093172915997962136, guid: 4630c6cee20d44d869a5cb4a01c44090, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 656308241}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9480,11 +9541,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8865373448656147578, guid: 66ce666aac68d45a684d73516a9c9cb7, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 656308241}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 66ce666aac68d45a684d73516a9c9cb7, type: 3}
+--- !u!114 &2090932344 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2538635990530796742, guid: 3b7c4606a5ff84cefb99ed4dfce697c7, type: 3}
+  m_PrefabInstance: {fileID: 1677900594}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d1191079784c40359fce5829f6c6274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

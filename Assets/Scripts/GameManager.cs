@@ -57,7 +57,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Activate Pacman
-        this.pacman.gameObject.SetActive(true);
+        pacman.ResetState();
     }
 
     private void GameOver()
@@ -95,10 +95,10 @@ public class GameManager : MonoBehaviour
     public void PacmanEaten()
     {
         // Deactivate Pacman and reduce lives by one
-        this.pacman.gameObject.SetActive(false);
-        SetLives(this.lives - 1);
+        pacman.gameObject.SetActive(false);
+        SetLives(lives - 1);
 
-        if (this.lives > 0)
+        if (lives > 0)
         {
             // Reset game state after 3 seconds if lives remain
             Invoke(nameof(ResetState), 3.0f);
