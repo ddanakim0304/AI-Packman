@@ -12,7 +12,7 @@ public class GhostScatter : GhostBehavior
     {
         Node node = other.GetComponent<Node>();
 
-        if (node != null && !this.enabled && !this.ghost.frightened.enabled)
+        if (node != null && this.enabled && !this.ghost.frightened.enabled)
         {
             int index = Random.Range(0, node.availableDirections.Count);
 

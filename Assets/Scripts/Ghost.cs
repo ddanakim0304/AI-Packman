@@ -12,7 +12,7 @@ public class Ghost : MonoBehaviour
     public GhostFrightened frightened { get; private set; }
     public GhostBehavior initialBehavior;
 
-    public Transform target;
+    public Transform pacman;
 
     public int points = 200;
 
