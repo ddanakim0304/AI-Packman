@@ -11,29 +11,33 @@ public class GhostChase : GhostBehavior
     {
         Node node = other.GetComponent<Node>();
 
-        // Do nothing while the ghost is frightened
         if (node != null && enabled && !ghost.frightened.enabled)
         {
-            Vector2 direction = Vector2.zero;
-            float minDistance = float.MaxValue;
+            // Get direction to pacman
+            Vector2 targetDirection = ((Vector2)ghost.pacman.position - (Vector2)transform.position).normalized;
+            Vector2 bestDirection = Vector2.zero;
+            float maxDot = -1f;
 
-            // Find the available direction that moves closet to pacman
             foreach (Vector2 availableDirection in node.availableDirections)
             {
-                // If the distance in this direction is less than the current
-                // min distance then this direction becomes the new closest
-                Vector3 newPosition = transform.position + new Vector3(availableDirection.x, availableDirection.y);
-                float distance = (ghost.pacman.position - newPosition).sqrMagnitude;
-
-                if (distance < minDistance)
+                // Compare direction similarity using dot product
+                float dot = Vector2.Dot(targetDirection, availableDirection);
+                if (dot > maxDot)
                 {
-                    direction = availableDirection;
-                    minDistance = distance;
+                    maxDot = dot;
+                    bestDirection = availableDirection;
                 }
             }
 
-            ghost.movement.SetDirection(direction);
+            if (bestDirection != Vector2.zero)
+            {
+                ghost.movement.SetDirection(bestDirection);
+            }
+            else
+            {
+                // Fallback to first available direction
+                ghost.movement.SetDirection(node.availableDirections[0]);
+            }
         }
     }
-
 }

@@ -9497,6 +9497,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1897629771422341733, guid: 66ce666aac68d45a684d73516a9c9cb7, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7807851060747111036, guid: 66ce666aac68d45a684d73516a9c9cb7, type: 3}
       propertyPath: m_Name
       value: Ghost_Red

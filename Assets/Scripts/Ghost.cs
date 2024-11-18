@@ -18,6 +18,7 @@ public class Ghost : MonoBehaviour
 
     private void Awake()
     {
+        pacman = GameObject.FindGameObjectWithTag("Player").transform;
         this.movement = GetComponent<Movement>();
         this.home = GetComponent<GhostHome>();
         this.scatter = GetComponent<GhostScatter>();
