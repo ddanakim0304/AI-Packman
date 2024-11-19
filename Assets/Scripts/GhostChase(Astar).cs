@@ -13,6 +13,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
     {
         lastPredictionTime = Time.time;
         currentPredictedTarget = PredictTargetPosition();
+        Debug.Log("Initial predicted target: " + currentPredictedTarget);
     }
 
     private void Update()
@@ -21,6 +22,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         {
             currentPredictedTarget = PredictTargetPosition();
             lastPredictionTime = Time.time;
+            Debug.Log("Updated predicted target: " + currentPredictedTarget);
         }
     }
 
@@ -31,16 +33,16 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 
     private Vector2 PredictTargetPosition()
     {
-        // Get pacman's current position and movement direction
         Vector2 pacmanPos = ghost.pacman.position;
         Vector2 pacmanDirection = ghost.pacman.GetComponent<Movement>().direction;
-        
-        // Predict future position
-        return pacmanPos + (pacmanDirection * ghost.movement.speed * predictionTime);
+        Vector2 predictedPosition = pacmanPos + (pacmanDirection * ghost.movement.speed * predictionTime);
+        Debug.Log("Predicted position: " + predictedPosition);
+        return predictedPosition;
     }
 
     private List<Node> FindPath(Vector2 targetPosition)
     {
+        Debug.Log("Finding path to target position: " + targetPosition);
         var openSet = new List<Node>();
         var closedSet = new HashSet<Node>();
         var nodeCosts = new Dictionary<Node, NodeInfo>();
@@ -51,9 +53,11 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         while (openSet.Count > 0)
         {
             Node current = GetLowestFCostNode(openSet, nodeCosts);
-            
+            Debug.Log("Current node: " + current.transform.position);
+
             if (Vector2.Distance(current.transform.position, targetPosition) < 0.5f)
             {
+                Debug.Log("Path found to target position.");
                 return ReconstructPath(nodeCosts, current);
             }
 
@@ -64,14 +68,14 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             {
                 Vector2 nextPosition = (Vector2)current.transform.position + direction;
                 RaycastHit2D hit = Physics2D.Raycast(current.transform.position, direction, 1f);
-                
+
                 if (hit.collider != null)
                 {
                     Node neighbor = hit.collider.GetComponent<Node>();
                     if (neighbor != null && !closedSet.Contains(neighbor))
                     {
                         float newGCost = nodeCosts[current].gCost + 1;
-                        
+
                         if (!nodeCosts.ContainsKey(neighbor) || newGCost < nodeCosts[neighbor].gCost)
                         {
                             nodeCosts[neighbor] = new NodeInfo(
@@ -79,7 +83,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
                                 Vector2.Distance(neighbor.transform.position, targetPosition),
                                 current
                             );
-                            
+
                             if (!openSet.Contains(neighbor))
                             {
                                 openSet.Add(neighbor);
@@ -90,6 +94,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             }
         }
 
+        Debug.Log("No path found to target position.");
         return null;
     }
 
@@ -100,30 +105,31 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         if (node != null && enabled && !ghost.frightened.enabled)
         {
             currentNode = node;
+            Debug.Log("Entered node: " + node.transform.position);
             List<Node> path = FindPath(currentPredictedTarget);
-            
+
             if (path != null && path.Count > 1)
             {
                 Vector2 nextNodePosition = path[1].transform.position;
                 Vector2 direction = (nextNodePosition - (Vector2)transform.position).normalized;
-                
-                // Round the direction vector to ensure it aligns with grid
+
                 direction.x = Mathf.Round(direction.x);
                 direction.y = Mathf.Round(direction.y);
-                
-                // Validate the direction is available
+
                 if (IsValidDirection(node, direction))
                 {
+                    Debug.Log("Setting direction: " + direction);
                     ghost.movement.SetDirection(direction);
                 }
                 else
                 {
-                    // Choose best available direction
+                    Debug.Log("Invalid direction: " + direction + ". Choosing best available direction.");
                     ChooseBestAvailableDirection(node);
                 }
             }
             else
             {
+                Debug.Log("No valid path found. Choosing best available direction.");
                 ChooseBestAvailableDirection(node);
             }
         }
@@ -142,7 +148,6 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 
         foreach (Vector2 availableDir in node.availableDirections)
         {
-            // Don't reverse direction unless it's the only option
             if (availableDir == -ghost.movement.direction && node.availableDirections.Count > 1)
             {
                 continue;
@@ -156,6 +161,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             }
         }
 
+        Debug.Log("Best available direction: " + bestDirection);
         ghost.movement.SetDirection(bestDirection);
     }
 
@@ -180,6 +186,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             current = nodeCosts[current].parent;
             path.Insert(0, current);
         }
+        Debug.Log("Reconstructed path: " + string.Join(" -> ", path));
         return path;
     }
 
