@@ -8,8 +8,8 @@ public class Ghost : MonoBehaviour
 
     public GhostHome home { get; private set; }
     public GhostScatter scatter { get; private set; }
-    public GhostChase chase { get; private set; }
     public GhostFrightened frightened { get; private set; }
+    public IGhostChase chase { get; private set; }
     public GhostBehavior initialBehavior;
 
     public Transform pacman;
@@ -22,8 +22,13 @@ public class Ghost : MonoBehaviour
         this.movement = GetComponent<Movement>();
         this.home = GetComponent<GhostHome>();
         this.scatter = GetComponent<GhostScatter>();
-        this.chase = GetComponent<GhostChase>();
+        this.chase = GetComponent<IGhostChase>();
         this.frightened = GetComponent<GhostFrightened>();
+
+        // Fallback to A* chase if no specific chase behavior is assigned
+        if (chase == null) {
+            chase = GetComponent<GhostChaseAstar>();
+        }
     }
 
     private void Start()

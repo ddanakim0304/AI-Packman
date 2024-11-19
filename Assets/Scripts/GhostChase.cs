@@ -1,7 +1,9 @@
 using UnityEngine;
 
-public class GhostChase : GhostBehavior
+public class GhostChase : GhostBehavior, IGhostChase
 {
+    public bool IsEnabled => enabled;
+
     private void OnDisable()
     {
         ghost.scatter.Enable();
