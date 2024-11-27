@@ -5,10 +5,15 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 {
     private Node currentNode;
     private float predictionTime = 0.5f;
-    private float predictionUpdateInterval = 3f;
+    private float predictionUpdateInterval = 5f;
     private float lastPredictionTime;
     private Vector2 currentPredictedTarget;
 
+    private void OnDisable()
+    {
+        // Enable scatter behavior when this behavior is disabled
+        ghost.scatter.Enable();
+    }
     private void Start()
     {
         lastPredictionTime = Time.time;
@@ -18,6 +23,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 
     private void Update()
     {
+        // Update the predicted target position at regular intervals
         if (Time.time - lastPredictionTime >= predictionUpdateInterval)
         {
             currentPredictedTarget = PredictTargetPosition();
@@ -26,13 +32,10 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         }
     }
 
-    private void OnDisable()
-    {
-        ghost.scatter.Enable();
-    }
 
     private Vector2 PredictTargetPosition()
     {
+        // Predict Pacman's future position based on its current direction and speed
         Vector2 pacmanPos = ghost.pacman.position;
         Vector2 pacmanDirection = ghost.pacman.GetComponent<Movement>().direction;
         Vector2 predictedPosition = pacmanPos + (pacmanDirection * ghost.movement.speed * predictionTime);
@@ -55,6 +58,8 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             Node current = GetLowestFCostNode(openSet, nodeCosts);
             Debug.Log("Current node: " + current.transform.position);
 
+            // Check if the target position is reached
+
             if (Vector2.Distance(current.transform.position, targetPosition) < 0.5f)
             {
                 Debug.Log("Path found to target position.");
@@ -63,6 +68,8 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 
             openSet.Remove(current);
             closedSet.Add(current);
+
+            // Evaluate neighboring nodes
 
             foreach (Vector2 direction in current.availableDirections)
             {
@@ -76,6 +83,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
                     {
                         float newGCost = nodeCosts[current].gCost + 1;
 
+                        // Update node costs if a better path is found
                         if (!nodeCosts.ContainsKey(neighbor) || newGCost < nodeCosts[neighbor].gCost)
                         {
                             nodeCosts[neighbor] = new NodeInfo(
@@ -135,6 +143,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         }
     }
 
+    // Check if the direction is valid based on available directions
     private bool IsValidDirection(Node node, Vector2 direction)
     {
         return node.availableDirections.Contains(direction);
@@ -146,6 +155,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         float bestScore = float.MinValue;
         Vector2 bestDirection = node.availableDirections[0];
 
+        // Choose the best direction based on the target direction
         foreach (Vector2 availableDir in node.availableDirections)
         {
             if (availableDir == -ghost.movement.direction && node.availableDirections.Count > 1)
@@ -167,6 +177,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 
     private Node GetLowestFCostNode(List<Node> nodes, Dictionary<Node, NodeInfo> nodeCosts)
     {
+        // Get the node with the lowest fCost
         Node lowest = nodes[0];
         foreach (Node node in nodes)
         {
@@ -180,6 +191,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 
     private List<Node> ReconstructPath(Dictionary<Node, NodeInfo> nodeCosts, Node current)
     {
+        // Reconstruct the path from the target node to the start node
         var path = new List<Node> { current };
         while (nodeCosts[current].parent != null)
         {
