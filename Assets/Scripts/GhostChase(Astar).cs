@@ -5,7 +5,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 {
     private Node currentNode;
     private float predictionTime = 0.5f;
-    private float predictionUpdateInterval = 5f;
+    private float predictionUpdateInterval = 3.0f;
     private float lastPredictionTime;
     private Vector2 currentPredictedTarget;
 
@@ -14,11 +14,11 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         // Enable scatter behavior when this behavior is disabled
         ghost.scatter.Enable();
     }
+
     private void Start()
     {
         lastPredictionTime = Time.time;
         currentPredictedTarget = PredictTargetPosition();
-        Debug.Log("Initial predicted target: " + currentPredictedTarget);
     }
 
     private void Update()
@@ -28,10 +28,8 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         {
             currentPredictedTarget = PredictTargetPosition();
             lastPredictionTime = Time.time;
-            Debug.Log("Updated predicted target: " + currentPredictedTarget);
         }
     }
-
 
     private Vector2 PredictTargetPosition()
     {
@@ -39,13 +37,11 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         Vector2 pacmanPos = ghost.pacman.position;
         Vector2 pacmanDirection = ghost.pacman.GetComponent<Movement>().direction;
         Vector2 predictedPosition = pacmanPos + (pacmanDirection * ghost.movement.speed * predictionTime);
-        Debug.Log("Predicted position: " + predictedPosition);
         return predictedPosition;
     }
 
     private List<Node> FindPath(Vector2 targetPosition)
     {
-        Debug.Log("Finding path to target position: " + targetPosition);
         var openSet = new List<Node>();
         var closedSet = new HashSet<Node>();
         var nodeCosts = new Dictionary<Node, NodeInfo>();
@@ -56,13 +52,10 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         while (openSet.Count > 0)
         {
             Node current = GetLowestFCostNode(openSet, nodeCosts);
-            Debug.Log("Current node: " + current.transform.position);
 
             // Check if the target position is reached
-
             if (Vector2.Distance(current.transform.position, targetPosition) < 0.5f)
             {
-                Debug.Log("Path found to target position.");
                 return ReconstructPath(nodeCosts, current);
             }
 
@@ -70,7 +63,6 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             closedSet.Add(current);
 
             // Evaluate neighboring nodes
-
             foreach (Vector2 direction in current.availableDirections)
             {
                 Vector2 nextPosition = (Vector2)current.transform.position + direction;
@@ -102,7 +94,6 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             }
         }
 
-        Debug.Log("No path found to target position.");
         return null;
     }
 
@@ -113,7 +104,6 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         if (node != null && enabled && !ghost.frightened.enabled)
         {
             currentNode = node;
-            Debug.Log("Entered node: " + node.transform.position);
             List<Node> path = FindPath(currentPredictedTarget);
 
             if (path != null && path.Count > 1)
@@ -126,18 +116,15 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 
                 if (IsValidDirection(node, direction))
                 {
-                    Debug.Log("Setting direction: " + direction);
                     ghost.movement.SetDirection(direction);
                 }
                 else
                 {
-                    Debug.Log("Invalid direction: " + direction + ". Choosing best available direction.");
                     ChooseBestAvailableDirection(node);
                 }
             }
             else
             {
-                Debug.Log("No valid path found. Choosing best available direction.");
                 ChooseBestAvailableDirection(node);
             }
         }
@@ -171,7 +158,6 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             }
         }
 
-        Debug.Log("Best available direction: " + bestDirection);
         ghost.movement.SetDirection(bestDirection);
     }
 
@@ -198,7 +184,6 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             current = nodeCosts[current].parent;
             path.Insert(0, current);
         }
-        Debug.Log("Reconstructed path: " + string.Join(" -> ", path));
         return path;
     }
 
