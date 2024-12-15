@@ -10,13 +10,6 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     [SerializeField] private float epsilon = 0.2f;   // Epsilon for epsilon-greedy
     [SerializeField] private float epsilonMin = 0.1f;
     [SerializeField] private float epsilonDecay = 0.999f; // Decay epsilon each step
-
-    [Header("Prediction Parameters")]
-    [SerializeField] private float predictionUpdateInterval = 0.5f;
-    [SerializeField] private float predictionTime = 1.0f;
-    private float lastPredictionTime;
-    private Vector2 currentPredictedTarget;
-
     public bool IsEnabled => enabled;
 
     // Q-learning storage: Q[Node][ActionDirection] = Q-value
@@ -26,11 +19,13 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     private Vector2 previousAction;
     private bool hasPreviousState = false;
 
+    private float positionUpdateInterval = 1.0f;
+    private float lastPositionUpdateTime = 0f;
+
+    private Vector2 pacmanPos;
+
     private void Start()
     {
-        // Initialize prediction
-        lastPredictionTime = Time.time;
-        currentPredictedTarget = PredictTargetPosition();
 
         // Start periodic logging every 5 seconds
         InvokeRepeating(nameof(DebugPrintQTable), 5f, 5f);
@@ -38,18 +33,20 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
 
     private void Update()
     {
-        // Update the predicted target position at regular intervals
-        if (Time.time - lastPredictionTime >= predictionUpdateInterval)
+        if (Time.time - lastPositionUpdateTime >= positionUpdateInterval)
         {
-            currentPredictedTarget = PredictTargetPosition();
-            lastPredictionTime = Time.time;
+            lastPositionUpdateTime = Time.time;
+
+            Vector2 pacmanPos = ghost.pacman.position;
         }
     }
+
 
     private void OnDisable()
     {
         ghost.scatter.Enable();
     }
+
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -66,9 +63,6 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
             ghost.movement.SetDirection(Vector2.zero);
             return;
         }
-
-        // Use the predicted Pac-Man position instead of the current position
-        Vector2 pacmanPos = currentPredictedTarget;
         Vector2 ghostPos = node.transform.position;
 
         Node currentState = node;
@@ -194,16 +188,7 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     {
         return new Vector2(Mathf.Round(dir.x), Mathf.Round(dir.y));
     }
-
-    private Vector2 PredictTargetPosition()
-    {
-        // Predict Pac-Man's future position based on its current direction and speed
-        Vector2 pacmanPos = ghost.pacman.position;
-        Vector2 pacmanDirection = ghost.pacman.GetComponent<Movement>().direction;
-        Vector2 predictedPosition = pacmanPos + (pacmanDirection * ghost.movement.speed * predictionTime);
-        return predictedPosition;
-    }
-
+    
     private void DebugPrintQTable()
     {
         Debug.Log("----- Q-Table (Filtered) -----");
