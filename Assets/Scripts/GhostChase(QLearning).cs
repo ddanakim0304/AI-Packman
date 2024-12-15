@@ -1,12 +1,13 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class GhostChaseQLearning : GhostBehavior, IGhostChase
 {
     [Header("Q-Learning Hyperparameters")]
     [SerializeField] private float alpha = 0.1f;    // Learning rate
     [SerializeField] private float gamma = 0.9f;    // Discount factor
-    [SerializeField] private float epsilon = 1.0f;  // Epsilon for epsilon-greedy
+    [SerializeField] private float epsilon = 0.3f;  // Epsilon for epsilon-greedy
     [SerializeField] private float epsilonMin = 0.1f;
     [SerializeField] private float epsilonDecay = 0.999f; // Decay epsilon each step
 
@@ -19,11 +20,10 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     private (int dx, int dy) previousState;
     private Vector2 previousAction;
     private bool hasPreviousState = false;
-    private List<Vector2> previousActions; // store previous available actions
-    
+    private List<Vector2> previousActions;
+
     private void OnDisable()
     {
-        // When this behavior is disabled, switch to scatter
         ghost.scatter.Enable();
     }
 
@@ -32,136 +32,109 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
         Node node = other.GetComponent<Node>();
         if (node == null || !enabled || ghost.frightened.enabled)
         {
-            // If there's no node or the ghost is frightened, skip Q-learning decision
             return;
         }
-
-        // Current positions
+    
         Vector2 ghostPos = node.transform.position;
         Vector2 pacmanPos = ghost.pacman.position;
-
-        // Compute relative position (dx, dy)
+    
         int dx = Mathf.RoundToInt(pacmanPos.x - ghostPos.x);
         int dy = Mathf.RoundToInt(pacmanPos.y - ghostPos.y);
         (int dx, int dy) currentState = (dx, dy);
-
-        List<Vector2> actions = node.availableDirections;
-
-        // Initialize Q-values for currentState if needed
+    
+        // Initialize Q-table for current state if it doesn't exist
         if (!Q.ContainsKey(currentState))
         {
             Q[currentState] = new Dictionary<Vector2, float>();
-            foreach (var a in actions)
+        }
+    
+        List<Vector2> actions = node.availableDirections;
+    
+        // Initialize Q-values for all available actions
+        foreach (Vector2 action in actions)
+        {
+            Vector2 roundedAction = RoundDirection(action);
+            if (!Q[currentState].ContainsKey(roundedAction))
             {
-                // Round directions to avoid floating-point issues if needed
-                Vector2 dir = new Vector2(Mathf.Round(a.x), Mathf.Round(a.y));
-                if (!Q[currentState].ContainsKey(dir))
-                    Q[currentState][dir] = 0f;
+                Q[currentState][roundedAction] = 0f;
             }
         }
-
-        // Only update Q if we have a previous state and action
+    
+        // Update Q-values for previous state-action pair if exists
         if (hasPreviousState)
         {
-            // Ensure Q-values for previousState
             if (!Q.ContainsKey(previousState))
             {
-                // Initialize using previousActions
                 Q[previousState] = new Dictionary<Vector2, float>();
-                foreach (var a in previousActions)
-                {
-                    Vector2 dir = new Vector2(Mathf.Round(a.x), Mathf.Round(a.y));
-                    if (!Q[previousState].ContainsKey(dir))
-                        Q[previousState][dir] = 0f;
-                }
-            }
-
-            // Ensure Q-value for previousAction
-            if (!Q[previousState].ContainsKey(previousAction))
-            {
                 Q[previousState][previousAction] = 0f;
             }
-
-            // Calculate reward for transition
-            float r = CalculateReward(previousState, currentState);
-
-            // Compute max Q for next state
-            float maxQNext = float.NegativeInfinity;
-            foreach (var a in Q[currentState].Keys)
+            
+            // Ensure the previous action exists in the Q-table
+            Vector2 roundedPrevAction = RoundDirection(previousAction);
+            if (!Q[previousState].ContainsKey(roundedPrevAction))
             {
-                if (Q[currentState][a] > maxQNext)
-                    maxQNext = Q[currentState][a];
+                Q[previousState][roundedPrevAction] = 0f;
             }
-
-            // Q-update
-            float oldQ = Q[previousState][previousAction];
-            Q[previousState][previousAction] = oldQ + alpha * (r + gamma * maxQNext - oldQ);
-
-            // Decay epsilon over time to reduce exploration
+    
+            float r = CalculateReward(previousState, currentState);
+            float maxQNext = Q[currentState].Values.Max();
+            
+            Q[previousState][roundedPrevAction] = Q[previousState][roundedPrevAction] + 
+                alpha * (r + gamma * maxQNext - Q[previousState][roundedPrevAction]);
+            
             epsilon = Mathf.Max(epsilonMin, epsilon * epsilonDecay);
         }
-
-        if (actions.Count == 0)
-        {
-            // If no directions are available, choose a random direction
-            ghost.movement.SetDirection(actions[0]);
-            return;
-        }
-
-        // Select an action in currentState using epsilon-greedy
+    
+        // Choose next action
         Vector2 chosenAction;
         if (Random.value < epsilon)
         {
-            // Exploration
-            chosenAction = actions[Random.Range(0, actions.Count)];
+            // Exploration: random action
+            chosenAction = RoundDirection(actions[Random.Range(0, actions.Count)]);
         }
         else
         {
-            // Exploitation: pick action with max Q-value
+            // Exploitation: best action
+            chosenAction = RoundDirection(actions[0]);
             float bestQ = float.NegativeInfinity;
-            chosenAction = actions[0];
-            foreach (var a in actions)
+            foreach (var action in actions)
             {
-                Vector2 dir = new Vector2(Mathf.Round(a.x), Mathf.Round(a.y));
-                if (Q[currentState][dir] > bestQ)
+                Vector2 roundedAction = RoundDirection(action);
+                if (Q[currentState][roundedAction] > bestQ)
                 {
-                    bestQ = Q[currentState][dir];
-                    chosenAction = dir;
+                    bestQ = Q[currentState][roundedAction];
+                    chosenAction = roundedAction;
                 }
             }
         }
-
-        // Move the ghost in the chosen direction
+    
         ghost.movement.SetDirection(chosenAction);
-
-        // Store current as previous for next update
         previousState = currentState;
         previousAction = chosenAction;
-        previousActions = actions; // store actions for next time
         hasPreviousState = true;
     }
 
     private float CalculateReward((int dx, int dy) prev, (int dx, int dy) current)
     {
-        // Base step cost
         float reward = -0.1f;
-
         int prevDist = Mathf.Abs(prev.dx) + Mathf.Abs(prev.dy);
         int currDist = Mathf.Abs(current.dx) + Mathf.Abs(current.dy);
 
-        // Reward getting closer to Pac-Man
         if (currDist < prevDist)
         {
             reward += 0.5f;
         }
 
-        // If caught Pac-Man
         if (current.dx == 0 && current.dy == 0)
         {
-            reward = 100f; // Large positive reward for success
+            reward = 100f;
         }
 
         return reward;
     }
 
+    private Vector2 RoundDirection(Vector2 dir)
+    {
+        return new Vector2(Mathf.Round(dir.x), Mathf.Round(dir.y));
+    }
 }
