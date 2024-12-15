@@ -9,6 +9,8 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
     private float lastPredictionTime;
     private Vector2 currentPredictedTarget;
 
+    public bool IsEnabled => enabled;
+
     private void OnDisable()
     {
         // Enable scatter behavior when this behavior is disabled
@@ -192,8 +194,6 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
         }
         return path;
     }
-
-    public bool IsEnabled => enabled;
 
     private class NodeInfo
     {
