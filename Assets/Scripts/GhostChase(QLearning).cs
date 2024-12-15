@@ -5,17 +5,22 @@ using System.Linq;
 public class GhostChaseQLearning : GhostBehavior, IGhostChase
 {
     [Header("Q-Learning Hyperparameters")]
-    [SerializeField] private float alpha = 0.1f;    // Learning rate
-    [SerializeField] private float gamma = 0.9f;    // Discount factor
-    [SerializeField] private float epsilon = 0.5f;  // Epsilon for epsilon-greedy
+    [SerializeField] private float alpha = 0.1f;     // Learning rate
+    [SerializeField] private float gamma = 0.9f;     // Discount factor
+    [SerializeField] private float epsilon = 0.2f;   // Epsilon for epsilon-greedy
     [SerializeField] private float epsilonMin = 0.1f;
     [SerializeField] private float epsilonDecay = 0.999f; // Decay epsilon each step
+
+    [Header("Prediction Parameters")]
+    [SerializeField] private float predictionUpdateInterval = 0.5f;
+    [SerializeField] private float predictionTime = 1.0f;
+    private float lastPredictionTime;
+    private Vector2 currentPredictedTarget;
 
     public bool IsEnabled => enabled;
 
     // Q-learning storage: Q[Node][ActionDirection] = Q-value
-    private Dictionary<Node, Dictionary<Vector2, float>> Q 
-        = new Dictionary<Node, Dictionary<Vector2, float>>();
+    private Dictionary<Node, Dictionary<Vector2, float>> Q = new Dictionary<Node, Dictionary<Vector2, float>>();
 
     private Node previousState;
     private Vector2 previousAction;
@@ -23,8 +28,22 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
 
     private void Start()
     {
+        // Initialize prediction
+        lastPredictionTime = Time.time;
+        currentPredictedTarget = PredictTargetPosition();
+
         // Start periodic logging every 5 seconds
         InvokeRepeating(nameof(DebugPrintQTable), 5f, 5f);
+    }
+
+    private void Update()
+    {
+        // Update the predicted target position at regular intervals
+        if (Time.time - lastPredictionTime >= predictionUpdateInterval)
+        {
+            currentPredictedTarget = PredictTargetPosition();
+            lastPredictionTime = Time.time;
+        }
     }
 
     private void OnDisable()
@@ -34,21 +53,58 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!enabled || ghost.frightened.enabled) return;
+        if (!enabled || ghost.frightened.enabled)
+        {
+            return;
+        }
 
         Node node = other.GetComponent<Node>();
-        if (node == null) return;
+        // If there's no node, do nothing (no movement)
+        if (node == null)
+        {
+            // Remain still
+            ghost.movement.SetDirection(Vector2.zero);
+            return;
+        }
 
-        // The current state is the current node
+        // Use the predicted Pac-Man position instead of the current position
+        Vector2 pacmanPos = currentPredictedTarget;
+        Vector2 ghostPos = node.transform.position;
+
         Node currentState = node;
 
-        // Initialize Q-values for the current state if needed
+        // If no available directions, remain still
+        List<Vector2> actions = node.availableDirections;
+        if (actions == null || actions.Count == 0)
+        {
+            ghost.movement.SetDirection(Vector2.zero);
+            return;
+        }
+
+        // Remove the opposite of the previous action to prevent immediate backtracking
+        if (hasPreviousState && previousAction != Vector2.zero)
+        {
+            Vector2 oppositeDirection = -previousAction;
+            actions = actions.Where(a => RoundDirection(a) != RoundDirection(oppositeDirection)).ToList();
+            
+            // If removing opposite direction leaves no actions, just use all actions again
+            // or stay still if you prefer that behavior
+            if (actions.Count == 0)
+            {
+                // Stay still or revert to all actions
+                // Here we choose to stay still to avoid back-and-forth.
+                ghost.movement.SetDirection(Vector2.zero);
+                return;
+            }
+        }
+
+        // Initialize Q-table for current state if it doesn't exist
         if (!Q.ContainsKey(currentState))
         {
             Q[currentState] = new Dictionary<Vector2, float>();
         }
 
-        List<Vector2> actions = node.availableDirections;
+        // Initialize Q-values for all available actions
         foreach (Vector2 action in actions)
         {
             Vector2 roundedAction = RoundDirection(action);
@@ -58,54 +114,50 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
             }
         }
 
-        // Update Q-values for the previous state-action pair
+        // Update Q-values for the previous state-action pair if exists
         if (hasPreviousState)
         {
-            // Ensure previous state exists in Q
             if (!Q.ContainsKey(previousState))
             {
                 Q[previousState] = new Dictionary<Vector2, float>();
                 Q[previousState][previousAction] = 0f;
             }
 
+            // Ensure the previous action exists in the Q-table
             Vector2 roundedPrevAction = RoundDirection(previousAction);
             if (!Q[previousState].ContainsKey(roundedPrevAction))
             {
                 Q[previousState][roundedPrevAction] = 0f;
             }
 
-            float r = CalculateReward(previousState, currentState);
-            float maxQNext = 0f;
-            if (Q.ContainsKey(currentState) && Q[currentState].Count > 0)
-            {
-                maxQNext = Q[currentState].Values.Max();
-            }
+            float r = CalculateReward(previousState, currentState, pacmanPos, ghostPos);
+            float maxQNext = Q[currentState].Values.Max();
 
-            float oldVal = Q[previousState][roundedPrevAction];
-            Q[previousState][roundedPrevAction] = oldVal + alpha * (r + gamma * maxQNext - oldVal);
+            Q[previousState][roundedPrevAction] = Q[previousState][roundedPrevAction] +
+                alpha * (r + gamma * maxQNext - Q[previousState][roundedPrevAction]);
 
-            // Decay epsilon
             epsilon = Mathf.Max(epsilonMin, epsilon * epsilonDecay);
         }
 
-        // Choose the next action (epsilon-greedy)
+        // Choose next action
         Vector2 chosenAction;
         if (Random.value < epsilon)
         {
-            // Exploration
+            // Exploration: random action
             chosenAction = RoundDirection(actions[Random.Range(0, actions.Count)]);
         }
         else
         {
-            // Exploitation
-            chosenAction = actions[0];
+            // Exploitation: best action
+            chosenAction = Vector2.zero;
             float bestQ = float.NegativeInfinity;
             foreach (var action in actions)
             {
                 Vector2 roundedAction = RoundDirection(action);
-                if (Q[currentState][roundedAction] > bestQ)
+                float qVal = Q[currentState][roundedAction];
+                if (qVal > bestQ)
                 {
-                    bestQ = Q[currentState][roundedAction];
+                    bestQ = qVal;
                     chosenAction = roundedAction;
                 }
             }
@@ -117,39 +169,39 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
         hasPreviousState = true;
     }
 
-    private float CalculateReward(Node prevNode, Node currentNode)
+    private float CalculateReward(Node prev, Node current, Vector2 pacmanPos, Vector2 ghostPos)
     {
-        // Reward movement that decreases Manhattan distance to Pac-Man
-        // and give a large reward if the ghost reaches Pac-Man.
-        Vector2 ghostPos = currentNode.transform.position;
-        Vector2 pacmanPos = ghost.pacman.position;
+        // Example: reward for moving closer to predicted Pac-Man position
+        float prevDist = Vector2.Distance(prev.transform.position, pacmanPos);
+        float currDist = Vector2.Distance(current.transform.position, pacmanPos);
 
-        int prevDist = GetManhattanDistance(prevNode.transform.position, pacmanPos);
-        int currDist = GetManhattanDistance(ghostPos, pacmanPos);
-
-        float reward = -0.5f; // small penalty per step to encourage efficiency
+        float reward = -0.5f;  // Base negative reward to encourage efficient movement
         if (currDist < prevDist)
         {
-            reward += 5.0f; // reward getting closer
+            reward += 5.0f;  // Reward for getting closer
         }
 
-        // If ghost catches Pac-Man (assuming this means positions are the same)
-        if (Mathf.Approximately(ghostPos.x, pacmanPos.x) && Mathf.Approximately(ghostPos.y, pacmanPos.y))
+        // If ghost reaches Pac-Man’s predicted position (very unlikely)
+        if (Mathf.Approximately(currDist, 0f))
         {
-            reward = 100f;
+            reward += 100f;
         }
 
         return reward;
     }
 
-    private int GetManhattanDistance(Vector2 posA, Vector2 posB)
-    {
-        return Mathf.Abs(Mathf.RoundToInt(posA.x - posB.x)) + Mathf.Abs(Mathf.RoundToInt(posA.y - posB.y));
-    }
-
     private Vector2 RoundDirection(Vector2 dir)
     {
         return new Vector2(Mathf.Round(dir.x), Mathf.Round(dir.y));
+    }
+
+    private Vector2 PredictTargetPosition()
+    {
+        // Predict Pac-Man's future position based on its current direction and speed
+        Vector2 pacmanPos = ghost.pacman.position;
+        Vector2 pacmanDirection = ghost.pacman.GetComponent<Movement>().direction;
+        Vector2 predictedPosition = pacmanPos + (pacmanDirection * ghost.movement.speed * predictionTime);
+        return predictedPosition;
     }
 
     private void DebugPrintQTable()
