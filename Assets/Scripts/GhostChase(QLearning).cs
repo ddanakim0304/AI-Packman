@@ -1,171 +1,167 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
-public class GhostChaseQLearning : GhostBehavior, IGhostChase 
+public class GhostChaseQLearning : GhostBehavior, IGhostChase
 {
-    private float learningRate = 0.1f;
-    private float discountFactor = 0.9f;
-    private float explorationRate = 0.2f;
-    private float updateInterval = 1f;
-    private Node currentNode;
+    [Header("Q-Learning Hyperparameters")]
+    [SerializeField] private float alpha = 0.1f;    // Learning rate
+    [SerializeField] private float gamma = 0.9f;    // Discount factor
+    [SerializeField] private float epsilon = 1.0f;  // Epsilon for epsilon-greedy
+    [SerializeField] private float epsilonMin = 0.1f;
+    [SerializeField] private float epsilonDecay = 0.999f; // Decay epsilon each step
 
     public bool IsEnabled => enabled;
-    private Node[] allNodes;
-    private Dictionary<int, Dictionary<Vector2, float>> qTable;
 
+    // Q-learning storage
+    private Dictionary<(int dx, int dy), Dictionary<Vector2, float>> Q 
+        = new Dictionary<(int dx, int dy), Dictionary<Vector2, float>>();
+
+    private (int dx, int dy) previousState;
+    private Vector2 previousAction;
+    private bool hasPreviousState = false;
+    private List<Vector2> previousActions; // store previous available actions
+    
     private void OnDisable()
     {
+        // When this behavior is disabled, switch to scatter
         ghost.scatter.Enable();
     }
-    private void Start()
-    {
-        allNodes = NodeManager.Instance.allNodes.ToArray();
-        InitializeQTable();
-        StartCoroutine(UpdateBehavior());
-    }
 
-        private IEnumerator UpdateBehavior()
-    {
-        while (enabled)
-        {
-            yield return new WaitForSeconds(updateInterval);
-            
-            if (!ghost.frightened.enabled)
-            {
-                currentNode = FindNearestNode(transform.position);
-                if (currentNode != null)
-                {
-                    Vector2 direction = ChooseAction(currentNode);
-                    UpdateQValue(currentNode, direction);
-                    ghost.movement.SetDirection(direction);
-                }
-            }
-        }
-    }
-
-    private void OnTriggerEnter2D(Collider2D other) 
+    private void OnTriggerEnter2D(Collider2D other)
     {
         Node node = other.GetComponent<Node>();
-        
-        if (node != null && enabled && !ghost.frightened.enabled)
+        if (node == null || !enabled || ghost.frightened.enabled)
         {
-            currentNode = node;
-            Vector2 direction = ChooseAction(node);
-            UpdateQValue(node, direction);
-            ghost.movement.SetDirection(direction);
+            // If there's no node or the ghost is frightened, skip Q-learning decision
+            return;
         }
-    }
 
-    private void InitializeQTable()
-    {
-        qTable = new Dictionary<int, Dictionary<Vector2, float>>();
-        foreach (Node node in allNodes)
+        // Current positions
+        Vector2 ghostPos = node.transform.position;
+        Vector2 pacmanPos = ghost.pacman.position;
+
+        // Compute relative position (dx, dy)
+        int dx = Mathf.RoundToInt(pacmanPos.x - ghostPos.x);
+        int dy = Mathf.RoundToInt(pacmanPos.y - ghostPos.y);
+        (int dx, int dy) currentState = (dx, dy);
+
+        List<Vector2> actions = node.availableDirections;
+
+        // Initialize Q-values for currentState if needed
+        if (!Q.ContainsKey(currentState))
         {
-            Dictionary<Vector2, float> actions = new Dictionary<Vector2, float>();
-            foreach (Vector2 direction in node.availableDirections)
+            Q[currentState] = new Dictionary<Vector2, float>();
+            foreach (var a in actions)
             {
-                actions[direction] = 0f;
+                // Round directions to avoid floating-point issues if needed
+                Vector2 dir = new Vector2(Mathf.Round(a.x), Mathf.Round(a.y));
+                if (!Q[currentState].ContainsKey(dir))
+                    Q[currentState][dir] = 0f;
             }
-            qTable[node.GetInstanceID()] = actions;
         }
-    }
 
-    private Vector2 ChooseAction(Node node)
-    {
-        if (Random.value < explorationRate)
+        // Only update Q if we have a previous state and action
+        if (hasPreviousState)
         {
-            // Exploration: random valid direction
-            int randomIndex = Random.Range(0, node.availableDirections.Count);
-            return node.availableDirections[randomIndex];
+            // Ensure Q-values for previousState
+            if (!Q.ContainsKey(previousState))
+            {
+                // Initialize using previousActions
+                Q[previousState] = new Dictionary<Vector2, float>();
+                foreach (var a in previousActions)
+                {
+                    Vector2 dir = new Vector2(Mathf.Round(a.x), Mathf.Round(a.y));
+                    if (!Q[previousState].ContainsKey(dir))
+                        Q[previousState][dir] = 0f;
+                }
+            }
+
+            // Ensure Q-value for previousAction
+            if (!Q[previousState].ContainsKey(previousAction))
+            {
+                Q[previousState][previousAction] = 0f;
+            }
+
+            // Calculate reward for transition
+            float r = CalculateReward(previousState, currentState);
+
+            // Compute max Q for next state
+            float maxQNext = float.NegativeInfinity;
+            foreach (var a in Q[currentState].Keys)
+            {
+                if (Q[currentState][a] > maxQNext)
+                    maxQNext = Q[currentState][a];
+            }
+
+            // Q-update
+            float oldQ = Q[previousState][previousAction];
+            Q[previousState][previousAction] = oldQ + alpha * (r + gamma * maxQNext - oldQ);
+
+            // Decay epsilon over time to reduce exploration
+            epsilon = Mathf.Max(epsilonMin, epsilon * epsilonDecay);
+        }
+
+        if (actions.Count == 0)
+        {
+            // If no directions are available, choose a random direction
+            ghost.movement.SetDirection(actions[0]);
+            return;
+        }
+
+        // Select an action in currentState using epsilon-greedy
+        Vector2 chosenAction;
+        if (Random.value < epsilon)
+        {
+            // Exploration
+            chosenAction = actions[Random.Range(0, actions.Count)];
         }
         else
         {
-            // Exploitation: best known action
-            return GetBestAction(node);
-        }
-    }
-
-    private Vector2 GetBestAction(Node node)
-    {
-        Dictionary<Vector2, float> stateActions = qTable[node.GetInstanceID()];
-        Vector2 bestAction = node.availableDirections[0];
-        float bestValue = float.MinValue;
-
-        foreach (var kvp in stateActions)
-        {
-            if (kvp.Value > bestValue)
+            // Exploitation: pick action with max Q-value
+            float bestQ = float.NegativeInfinity;
+            chosenAction = actions[0];
+            foreach (var a in actions)
             {
-                bestValue = kvp.Value;
-                bestAction = kvp.Key;
-            }
-        }
-
-        return bestAction;
-    }
-
-    private void UpdateQValue(Node currentNode, Vector2 action)
-    {
-        float reward = CalculateReward();
-        float currentQ = qTable[currentNode.GetInstanceID()][action];
-
-        // Get the next node based on chosen action
-        Vector2 nextPosition = (Vector2)currentNode.transform.position + action;
-        Node nextNode = FindNearestNode(nextPosition);
-
-        float maxNextQ = 0f;
-        if (nextNode != null)
-        {
-            // Get max Q-value for next state
-            maxNextQ = qTable[nextNode.GetInstanceID()].Values.Max();
-        }
-
-        // Q-learning update formula
-        float newQ = currentQ + learningRate * (reward + discountFactor * maxNextQ - currentQ);
-        qTable[currentNode.GetInstanceID()][action] = newQ;
-    }
-
-    private float CalculateReward()
-    {
-        float distanceToPacman = Vector2.Distance(transform.position, ghost.pacman.position);
-        float baseReward = 10.0f / (distanceToPacman + 1.0f); // Increased base reward
-
-        Vector2 directionToPacman = ((Vector2)ghost.pacman.position - (Vector2)transform.position).normalized;
-        float alignment = Vector2.Dot(ghost.movement.direction, directionToPacman);
-        
-        // Penalize getting too close to other ghosts
-        float ghostPenalty = 0f;
-        foreach (Ghost otherGhost in FindObjectsOfType<Ghost>())
-        {
-            if (otherGhost != ghost)
-            {
-                float ghostDist = Vector2.Distance(transform.position, otherGhost.transform.position);
-                if (ghostDist < 2f)
+                Vector2 dir = new Vector2(Mathf.Round(a.x), Mathf.Round(a.y));
+                if (Q[currentState][dir] > bestQ)
                 {
-                    ghostPenalty += 1f / (ghostDist + 0.1f);
+                    bestQ = Q[currentState][dir];
+                    chosenAction = dir;
                 }
             }
         }
 
-        return (baseReward * (1 + alignment)) - ghostPenalty;
+        // Move the ghost in the chosen direction
+        ghost.movement.SetDirection(chosenAction);
+
+        // Store current as previous for next update
+        previousState = currentState;
+        previousAction = chosenAction;
+        previousActions = actions; // store actions for next time
+        hasPreviousState = true;
     }
 
-    private Node FindNearestNode(Vector2 position)
+    private float CalculateReward((int dx, int dy) prev, (int dx, int dy) current)
     {
-        float minDist = float.MaxValue;
-        Node nearest = null;
+        // Base step cost
+        float reward = -0.1f;
 
-        foreach (Node node in allNodes)
+        int prevDist = Mathf.Abs(prev.dx) + Mathf.Abs(prev.dy);
+        int currDist = Mathf.Abs(current.dx) + Mathf.Abs(current.dy);
+
+        // Reward getting closer to Pac-Man
+        if (currDist < prevDist)
         {
-            float dist = Vector2.Distance(position, node.transform.position);
-            if (dist < minDist)
-            {
-                minDist = dist;
-                nearest = node;
-            }
+            reward += 0.5f;
         }
 
-        return nearest;
+        // If caught Pac-Man
+        if (current.dx == 0 && current.dy == 0)
+        {
+            reward = 100f; // Large positive reward for success
+        }
+
+        return reward;
     }
+
 }
