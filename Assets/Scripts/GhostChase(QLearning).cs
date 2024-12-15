@@ -7,7 +7,7 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     [Header("Q-Learning Hyperparameters")]
     [SerializeField] private float alpha = 0.1f;     // Learning rate
     [SerializeField] private float gamma = 0.9f;     // Discount factor
-    [SerializeField] private float epsilon = 0.2f;   // Epsilon for epsilon-greedy
+    [SerializeField] private float epsilon = 0.5f;   // Epsilon for epsilon-greedy
     [SerializeField] private float epsilonMin = 0.1f;
     [SerializeField] private float epsilonDecay = 0.999f; // Decay epsilon each step
     public bool IsEnabled => enabled;
@@ -26,7 +26,6 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
 
     private void Start()
     {
-
         // Start periodic logging every 5 seconds
         InvokeRepeating(nameof(DebugPrintQTable), 5f, 5f);
     }
@@ -56,11 +55,9 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
         }
 
         Node node = other.GetComponent<Node>();
-        // If there's no node, do nothing (no movement)
+        // If there's no node, ignore
         if (node == null)
         {
-            // Remain still
-            ghost.movement.SetDirection(Vector2.zero);
             return;
         }
         Vector2 ghostPos = node.transform.position;
