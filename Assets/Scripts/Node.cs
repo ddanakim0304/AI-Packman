@@ -7,6 +7,7 @@ public class Node : MonoBehaviour
     public LayerMask obstacleLayer;
     public List<Vector2> availableDirections { get; private set; }
 
+
     private void Start()
     {
         availableDirections = new List<Vector2>();

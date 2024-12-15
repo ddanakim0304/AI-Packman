@@ -23,7 +23,7 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     private void Start()
     {
         // Cache all nodes once at startup
-        allNodes = FindObjectsOfType<Node>();
+        allNodes = NodeManager.Instance.allNodes.ToArray();
         InitializeQTable();
 
         // Start the coroutine for periodic updates
