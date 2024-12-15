@@ -5,7 +5,7 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 {
     private Node currentNode;
     private float predictionTime = 0.5f;
-    private float predictionUpdateInterval = 3.0f;
+    private float predictionUpdateInterval = 2.0f;
     private float lastPredictionTime;
     private Vector2 currentPredictedTarget;
 
@@ -42,15 +42,20 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
 
     private List<Node> FindPath(Vector2 targetPosition)
     {
+        // Nodes to be evaluated
         var openSet = new List<Node>();
+        // Nodes already evaluated
         var closedSet = new HashSet<Node>();
+        // Tracks the cost of each node
         var nodeCosts = new Dictionary<Node, NodeInfo>();
 
         openSet.Add(currentNode);
+        // Start node has a gCost of 0 and hCost based on the distance to the target
         nodeCosts[currentNode] = new NodeInfo(0, Vector2.Distance(currentNode.transform.position, targetPosition));
 
         while (openSet.Count > 0)
         {
+            // Get the node with the lowest fCost
             Node current = GetLowestFCostNode(openSet, nodeCosts);
 
             // Check if the target position is reached
@@ -62,12 +67,13 @@ public class GhostChaseAstar : GhostBehavior, IGhostChase
             openSet.Remove(current);
             closedSet.Add(current);
 
-            // Evaluate neighboring nodes
+            // Evaluate neighboring nodes (all the possible moves)
             foreach (Vector2 direction in current.availableDirections)
             {
                 Vector2 nextPosition = (Vector2)current.transform.position + direction;
                 RaycastHit2D hit = Physics2D.Raycast(current.transform.position, direction, 1f);
 
+                // If there is a valid neighbor node, update current node costs
                 if (hit.collider != null)
                 {
                     Node neighbor = hit.collider.GetComponent<Node>();
