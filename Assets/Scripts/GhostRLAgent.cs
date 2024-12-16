@@ -5,12 +5,15 @@ using Unity.MLAgents.Sensors;
 
 public class GhostRLAgent : Agent
 {
-    private Node currentNode;
     public Transform pacman;
+    private Node currentNode;
 
     private Vector2 chosenDirection;
+    private int stepCount;
+    private const int maxStepsPerEpisode = 100;
 
-    [SerializeField] private TMPro.TextMeshProUGUI iterationText; // UI text component
+    // Display training iteration in UI
+    [SerializeField] private TMPro.TextMeshProUGUI iterationText;
     private int trainingIteration = 0;
 
     public override void OnEpisodeBegin()
@@ -23,11 +26,16 @@ public class GhostRLAgent : Agent
         {
             iterationText.text = $"Training Iteration: {trainingIteration}";
         }
-    
-        // Existing reset code
-        transform.position = GetRandomNodePosition();
-        pacman.position = GetRandomNodePosition();
+        // Reset ghost to its initial position
+        transform.position = transform.position;
+
+        // Set Pac-Man's position (fixed for this phase)
+        pacman.position = new Vector3(5, 5, 0);
+
+        // Reset variables
         chosenDirection = Vector2.zero;
+        currentNode = null;
+        stepCount = 0;
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -36,19 +44,30 @@ public class GhostRLAgent : Agent
         Vector2 relativePosition = (Vector2)pacman.position - (Vector2)transform.position;
         sensor.AddObservation(relativePosition.normalized);
 
-        // Observe available directions at the current node
-        foreach (Vector2 dir in currentNode.availableDirections)
+        // Observe available directions from the current node
+        if (currentNode != null)
         {
-            sensor.AddObservation(dir.normalized);
+            foreach (Vector2 dir in currentNode.availableDirections)
+            {
+                sensor.AddObservation(dir.normalized);
+            }
+        }
+        else
+        {
+            // If no current node, add zero observations for consistency
+            for (int i = 0; i < 4; i++)
+            {
+                sensor.AddObservation(Vector2.zero);
+            }
         }
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        // Get action index
+        // Get the action (direction index) from the RL model
         int action = actions.DiscreteActions[0];
 
-        // Map action to a direction
+        // Map action to a direction and move the ghost
         if (currentNode != null && action < currentNode.availableDirections.Count)
         {
             chosenDirection = currentNode.availableDirections[action];
@@ -58,13 +77,30 @@ public class GhostRLAgent : Agent
             chosenDirection = Vector2.zero;
         }
 
-        // Reward logic
-        float distanceToPacman = Vector2.Distance(transform.position, pacman.position);
-        AddReward(-distanceToPacman * 0.01f); // Slight penalty for distance
+        // Move ghost
+        if (chosenDirection != Vector2.zero)
+        {
+            transform.position += (Vector3)chosenDirection;
+        }
 
+        // Reward and termination logic
+        stepCount++;
+        float distanceToPacman = Vector2.Distance(transform.position, pacman.position);
+
+        // Reward for moving closer
+        AddReward(-distanceToPacman * 0.01f);
+
+        // End episode if ghost reaches Pac-Man
         if (distanceToPacman < 1.0f)
         {
             AddReward(1.0f); // Big reward for catching Pac-Man
+            EndEpisode();
+        }
+
+        // End episode if maximum steps are reached
+        if (stepCount >= maxStepsPerEpisode)
+        {
+            AddReward(-1.0f); // Penalty for failing to reach Pac-Man
             EndEpisode();
         }
     }
@@ -77,11 +113,5 @@ public class GhostRLAgent : Agent
     public Vector2 GetChosenDirection()
     {
         return chosenDirection;
-    }
-
-    private Vector3 GetRandomNodePosition()
-    {
-        Node[] nodes = FindObjectsOfType<Node>();
-        return nodes[Random.Range(0, nodes.Length)].transform.position;
     }
 }
