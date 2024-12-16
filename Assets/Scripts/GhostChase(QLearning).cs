@@ -29,6 +29,27 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
 
             Vector2 pacmanPos = ghost.pacman.position;
         }
+
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            DebugPrintQTable();
+        }
+    }
+
+
+    public void DebugPrintQTable()
+    {
+        Debug.Log("----- Q-Learning Table -----");
+        foreach (var state in Q)
+        {
+            string stateInfo = $"State (Node: {state.Key.node.name}, Region: {state.Key.pacmanRegion}): ";
+            foreach (var action in state.Value)
+            {
+                stateInfo += $"Action {action.Key} -> Q: {action.Value:F2}, ";
+            }
+            Debug.Log(stateInfo.TrimEnd(',', ' '));
+        }
+        Debug.Log("----------------------------");
     }
 
     private void OnDisable()
