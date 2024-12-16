@@ -16,20 +16,10 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     private Vector2 previousAction;
     private bool hasPreviousState = false;
 
-    private float positionUpdateInterval = 1.0f;
-    private float lastPositionUpdateTime = 0f;
-
     private Vector2 pacmanPos;
 
     private void Update()
     {
-        if (Time.time - lastPositionUpdateTime >= positionUpdateInterval)
-        {
-            lastPositionUpdateTime = Time.time;
-
-            Vector2 pacmanPos = ghost.pacman.position;
-        }
-
         if (Input.GetKeyDown(KeyCode.P))
         {
             DebugPrintQTable();
