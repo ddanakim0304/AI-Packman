@@ -12,9 +12,6 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     [SerializeField] private float epsilonDecay = 0.999f; // Decay epsilon each step
     public bool IsEnabled => enabled;
 
-    // Q-learning storage: Q[Node][ActionDirection] = Q-value
-    private Dictionary<Node, Dictionary<Vector2, float>> Q = new Dictionary<Node, Dictionary<Vector2, float>>();
-
     private Node previousState;
     private Vector2 previousAction;
     private bool hasPreviousState = false;
@@ -34,12 +31,57 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
         }
     }
 
-
     private void OnDisable()
     {
         ghost.scatter.Enable();
     }
 
+    // Pacman's relative directions
+    private readonly Vector2[] directionVectors = new[] {
+        new Vector2(-1, 1),  // Top-left
+        new Vector2(0, 1),   // Top
+        new Vector2(1, 1),   // Top-right
+        new Vector2(-1, 0),  // Left
+        new Vector2(1, 0),   // Right 
+        new Vector2(-1, -1), // Bottom-left
+        new Vector2(0, -1),  // Bottom
+        new Vector2(1, -1)   // Bottom-right
+    };
+
+    private struct QState
+    {
+        public Node node;
+        public int pacmanRegion;
+
+        public QState(Node node, int region)
+        {
+            this.node = node;
+            this.pacmanRegion = region;
+        }
+    }
+
+    // Q-learning storage
+    private Dictionary<QState, Dictionary<Vector2, float>> Q = 
+    new Dictionary<QState, Dictionary<Vector2, float>>();
+
+    // Determine Pac-Man's relative region
+    private int GetPacmanRegion(Vector2 ghostPos, Vector2 pacmanPos)
+    {
+        Vector2 direction = (pacmanPos - ghostPos).normalized;
+        float maxDot = float.MinValue;
+        int currentRegion = 0;
+        
+        for (int i = 0; i < directionVectors.Length; i++)
+        {
+            float dot = Vector2.Dot(direction, directionVectors[i].normalized);
+            if (dot > maxDot)
+            {
+                maxDot = dot;
+                currentRegion = i;
+            }
+        }
+        return currentRegion;
+    }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -55,8 +97,9 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
             return;
         }
         Vector2 ghostPos = node.transform.position;
-
-        Node currentState = node;
+        
+        int region = GetPacmanRegion(ghostPos, pacmanPos);
+        QState currentState = new QState(node, region);
 
         // If no available directions, remain still
         List<Vector2> actions = node.availableDirections;
@@ -72,12 +115,9 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
             Vector2 oppositeDirection = -previousAction;
             actions = actions.Where(a => RoundDirection(a) != RoundDirection(oppositeDirection)).ToList();
             
-            // If removing opposite direction leaves no actions, just use all actions again
-            // or stay still if you prefer that behavior
             if (actions.Count == 0)
             {
-                // Stay still or revert to all actions
-                // Here we choose to stay still to avoid back-and-forth.
+                // Stay still to avoid back-and-forth
                 ghost.movement.SetDirection(Vector2.zero);
                 return;
             }
@@ -102,29 +142,30 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
         // Update Q-values for the previous state-action pair if exists
         if (hasPreviousState)
         {
-            if (!Q.ContainsKey(previousState))
+            QState prevState = new QState(previousState, GetPacmanRegion(previousState.transform.position, pacmanPos));
+            if (!Q.ContainsKey(prevState))
             {
-                Q[previousState] = new Dictionary<Vector2, float>();
-                Q[previousState][previousAction] = 0f;
+                Q[prevState] = new Dictionary<Vector2, float>();
+                Q[prevState][previousAction] = 0f;
             }
 
-            // Ensure the previous action exists in the Q-table
             Vector2 roundedPrevAction = RoundDirection(previousAction);
-            if (!Q[previousState].ContainsKey(roundedPrevAction))
+            if (!Q[prevState].ContainsKey(roundedPrevAction))
             {
-                Q[previousState][roundedPrevAction] = 0f;
+                Q[prevState][roundedPrevAction] = 0f;
             }
 
-            float r = CalculateReward(previousState, currentState, pacmanPos, ghostPos);
+            float r = CalculateReward(previousState, currentState.node, pacmanPos, ghostPos);
             float maxQNext = Q[currentState].Values.Max();
 
-            Q[previousState][roundedPrevAction] = Q[previousState][roundedPrevAction] +
-                learningRate * (r + discountFactor * maxQNext - Q[previousState][roundedPrevAction]);
+            // Q-learning update formula for Q(s, a)
+            Q[prevState][roundedPrevAction] = Q[prevState][roundedPrevAction] +
+                learningRate * (r + discountFactor * maxQNext - Q[prevState][roundedPrevAction]);
 
             epsilon = Mathf.Max(epsilonMin, epsilon * epsilonDecay);
         }
 
-        // Choose next action
+        // Choose next action (epsilon-greedy)
         Vector2 chosenAction;
         if (Random.value < epsilon)
         {
@@ -149,7 +190,7 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
         }
 
         ghost.movement.SetDirection(chosenAction);
-        previousState = currentState;
+        previousState = node;
         previousAction = chosenAction;
         hasPreviousState = true;
     }
@@ -165,13 +206,10 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
         {
             reward += 5.0f;  // Reward for getting closer
         }
-
-        // If ghost reaches Pac-Man’s predicted position (very unlikely)
-        if (Mathf.Approximately(currDist, 0f))
+        else if (currDist > prevDist)
         {
-            reward += 100f;
+            reward -= 2.0f;  // Penalty for getting farther
         }
-
         return reward;
     }
 
