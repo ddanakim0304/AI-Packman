@@ -42,26 +42,40 @@ public class GhostRLAgent : Agent
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        // Get action index
         int action = actions.DiscreteActions[0];
-
-        // Map action to a direction
-        if (currentNode != null && action < currentNode.availableDirections.Count)
-        {
-            chosenDirection = currentNode.availableDirections[action];
+        
+        // Store previous position for reward calculation
+        Vector2 previousPos = transform.position;
+        
+        // Get new direction
+        Vector2 newDirection = Vector2.zero;
+        if (currentNode != null && action < currentNode.availableDirections.Count) {
+            newDirection = currentNode.availableDirections[action];
+            
+            // Strong penalty for reversing direction
+            if (newDirection == -chosenDirection) {
+                AddReward(-1.0f);  // Increased penalty
+                return;
+            }
+            
+            chosenDirection = newDirection;
         }
-        else
-        {
-            chosenDirection = Vector2.zero;
-        }
 
-        // Reward logic
+        // Calculate distance to Pacman
         float distanceToPacman = Vector2.Distance(transform.position, pacman.position);
-        AddReward(-distanceToPacman * 0.01f); // Slight penalty for distance
+        
+        // Reward for getting closer to Pacman
+        float reward = previousPos.magnitude - distanceToPacman;
+        AddReward(reward);
 
-        if (distanceToPacman < 1.0f)
-        {
-            AddReward(1.0f); // Big reward for catching Pac-Man
+        // Additional penalty for standing still
+        if (newDirection == Vector2.zero) {
+            AddReward(-0.5f);
+        }
+
+        // Bonus reward for catching Pacman
+        if (distanceToPacman < 1.0f) {
+            AddReward(5.0f);
             EndEpisode();
         }
     }
