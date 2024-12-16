@@ -70,6 +70,9 @@ public class GameManager : MonoBehaviour
 
         // Deactivate Pacman
         this.pacman.gameObject.SetActive(false);
+
+        // Stop the game
+        Time.timeScale = 0;
     }
 
     private void SetScore(int score)
