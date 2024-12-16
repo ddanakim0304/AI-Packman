@@ -10,9 +10,21 @@ public class GhostRLAgent : Agent
 
     private Vector2 chosenDirection;
 
+    [SerializeField] private TMPro.TextMeshProUGUI iterationText; // UI text component
+    private int trainingIteration = 0;
+
     public override void OnEpisodeBegin()
     {
-        // Reset positions of ghost and Pac-Man
+        // Increment iteration counter
+        trainingIteration++;
+        
+        // Update UI text if assigned
+        if (iterationText != null)
+        {
+            iterationText.text = $"Training Iteration: {trainingIteration}";
+        }
+    
+        // Existing reset code
         transform.position = GetRandomNodePosition();
         pacman.position = GetRandomNodePosition();
         chosenDirection = Vector2.zero;
