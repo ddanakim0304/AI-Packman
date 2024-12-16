@@ -24,12 +24,6 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
 
     private Vector2 pacmanPos;
 
-    private void Start()
-    {
-        // Start periodic logging every 5 seconds
-        InvokeRepeating(nameof(DebugPrintQTable), 5f, 5f);
-    }
-
     private void Update()
     {
         if (Time.time - lastPositionUpdateTime >= positionUpdateInterval)
@@ -184,24 +178,5 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
     private Vector2 RoundDirection(Vector2 dir)
     {
         return new Vector2(Mathf.Round(dir.x), Mathf.Round(dir.y));
-    }
-    
-    private void DebugPrintQTable()
-    {
-        Debug.Log("----- Q-Table (Filtered) -----");
-        foreach (var state in Q)
-        {
-            // Filter states with at least one significant Q-value
-            if (state.Value.Values.Any(q => Mathf.Abs(q) > 0.1f))
-            {
-                string stateInfo = $"State {state.Key.name}: ";
-                foreach (var action in state.Value)
-                {
-                    stateInfo += $"Action {action.Key} -> Q: {action.Value:F2}, ";
-                }
-                Debug.Log(stateInfo.TrimEnd(',', ' '));
-            }
-        }
-        Debug.Log("-------------------");
     }
 }
