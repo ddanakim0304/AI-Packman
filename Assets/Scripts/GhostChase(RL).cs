@@ -7,13 +7,22 @@ using System.Collections.Generic;
 public class GhostChaseRL : Agent
 {
     [SerializeField] private Transform pacman;
+    [SerializeField] private List<Transform> spawnPoints;
     private float previousDistance = 0f;
     private float currentDistance;
 
     public override void OnEpisodeBegin()
     {
-        transform.localPosition = new Vector3(4.5f, -5.5f, -1);
+        transform.localPosition = new Vector3(0f, -3.5f, -1);
         previousDistance = 0f;
+
+        // Randomly place Pac-Man at one of the spawn points
+        if (spawnPoints != null && spawnPoints.Count > 0)
+        {
+            int randomIndex = Random.Range(0, spawnPoints.Count);
+            pacman.localPosition = spawnPoints[randomIndex].localPosition;
+        }
+        
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -51,7 +60,7 @@ public class GhostChaseRL : Agent
         // Success condition: Close enough to catch Pac-Man
         if (currentDistance < 0.5f)
         {
-            SetReward(1.0f); // Large reward for catching Pac-Man
+            SetReward(100f); // Large reward for catching Pac-Man
             EndEpisode();
             Debug.Log("Pac-Man caught! Ending Episode");
         }
