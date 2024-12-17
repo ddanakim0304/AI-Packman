@@ -1,36 +1,77 @@
 using UnityEngine;
+using Unity.MLAgents;
+using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Sensors;
+using System.Collections.Generic;
 
-public class GhostChaseRL : GhostBehavior, IGhostChase
+public class GhostChaseRL : Agent
 {
-    public GhostRLAgent rlAgent;
-    public bool IsEnabled => enabled;
+    [SerializeField] private Transform pacman;
+    private float previousDistance = 0f;
+    private float currentDistance;
 
-    private void OnDisable()
+    public override void OnEpisodeBegin()
     {
-        ghost.scatter.Enable();
+        transform.position = Vector3.zero;
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    public override void CollectObservations(VectorSensor sensor)
     {
-        Node node = other.GetComponent<Node>();
+        sensor.AddObservation(pacman.position);
+        sensor.AddObservation(transform.position);
+    }
 
-        if (node != null && enabled && !ghost.frightened.enabled)
+    private Dictionary<int, Vector3> actionDict = new Dictionary<int, Vector3>{
+        { 0, new Vector3(0, 0, 0)},
+        { 1, new Vector3(0, 1, 0) },
+        { 2, new Vector3(0, -1, 0) },
+        { 3, new Vector3(1, 0, 0) },
+        { 4, new Vector3(-1, 0, 0) }
+    };
+
+    public override void OnActionReceived(ActionBuffers actions)
+    {
+        int action = actions.DiscreteActions[0];
+        float speed = 2f;
+        
+        transform.position += actionDict[action] * speed * Time.deltaTime;
+
+        // Update current distance
+        currentDistance = Vector3.Distance(pacman.position, transform.position);
+
+        // Compare distances and set rewards
+        if (previousDistance == 0)
         {
-            // Pass current node information to the RL agent
-            rlAgent.SetCurrentNode(node);
-
-            // Get direction decision from the RL agent
-            Vector2 chosenDirection = rlAgent.GetChosenDirection();
-
-            if (chosenDirection != Vector2.zero)
+            previousDistance = currentDistance;
+        }
+        else
+        {
+            if (currentDistance < previousDistance)
             {
-                ghost.movement.SetDirection(chosenDirection);
+                SetReward(0.1f);
             }
             else
             {
-                // Fallback to the first available direction
-                ghost.movement.SetDirection(node.availableDirections[0]);
+                SetReward(-0.1f);
             }
+            previousDistance = currentDistance;
+        }
+    }
+    
+
+
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            SetReward(1f);
+            EndEpisode();
+        }
+        else if (other.CompareTag("Obstacle"))
+        {
+            SetReward(-1f);
+            EndEpisode();
         }
     }
 }
