@@ -12,66 +12,51 @@ public class GhostChaseRL : Agent
 
     public override void OnEpisodeBegin()
     {
-        transform.position = Vector3.zero;
+        transform.localPosition = new Vector3(4.5f, -5.5f, -1);
+        previousDistance = 0f;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        sensor.AddObservation(pacman.position);
-        sensor.AddObservation(transform.position);
+        sensor.AddObservation(pacman.localPosition);
+        sensor.AddObservation(transform.localPosition);
     }
 
     private Dictionary<int, Vector3> actionDict = new Dictionary<int, Vector3>{
-        { 0, new Vector3(0, 0, 0)},
-        { 1, new Vector3(0, 1, 0) },
-        { 2, new Vector3(0, -1, 0) },
-        { 3, new Vector3(1, 0, 0) },
-        { 4, new Vector3(-1, 0, 0) }
+        { 0, Vector3.zero },
+        { 1, Vector3.up },
+        { 2, Vector2.down },
+        { 3, Vector2.right },
+        { 4, Vector2.left }
     };
 
     public override void OnActionReceived(ActionBuffers actions)
     {
         int action = actions.DiscreteActions[0];
-        float speed = 2f;
-        
-        transform.position += actionDict[action] * speed * Time.deltaTime;
+        float speed = 5f;
+
+        // Move the ghost
+        transform.localPosition += actionDict[action] * speed * Time.deltaTime;
 
         // Update current distance
-        currentDistance = Vector3.Distance(pacman.position, transform.position);
+        currentDistance = Vector2.Distance(new Vector2(pacman.localPosition.x, pacman.localPosition.y), new Vector2(transform.localPosition.x, transform.localPosition.y));
 
-        // Compare distances and set rewards
-        if (previousDistance == 0)
+        // Add step penalty to discourage excessive moves
+        AddReward(-0.01f);
+
+        // Reward inversely proportional to distance (closer = higher reward)
+        float proximityReward = 1.0f / (currentDistance + 0.1f); // Add small epsilon to avoid division by zero
+        AddReward(proximityReward);
+
+        // Success condition: Close enough to catch Pac-Man
+        if (currentDistance < 0.5f)
         {
-            previousDistance = currentDistance;
-        }
-        else
-        {
-            if (currentDistance < previousDistance)
-            {
-                SetReward(0.1f);
-            }
-            else
-            {
-                SetReward(-0.1f);
-            }
-            previousDistance = currentDistance;
-        }
-    }
-    
-
-
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            SetReward(1f);
+            SetReward(1.0f); // Large reward for catching Pac-Man
             EndEpisode();
+            Debug.Log("Pac-Man caught! Ending Episode");
         }
-        else if (other.CompareTag("Obstacle"))
-        {
-            SetReward(-1f);
-            EndEpisode();
-        }
+
+        previousDistance = currentDistance;
+
     }
 }
