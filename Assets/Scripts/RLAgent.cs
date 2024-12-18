@@ -10,22 +10,12 @@ public class RLAgent : Agent
     [SerializeField] private List<Transform> spawnPoints;
     private float previousDistance = 0f;
     private float currentDistance;
-
-    private Vector3 lastPosition;
-    private float stuckThreshold = 0.1f;
-    private int stuckCounter = 0;
-    private int maxStuckFrames = 50;
-    private Vector3 previousMoveDirection;
-    private float backAndForthPenalty = -0.5f;
-    private float stuckPenalty = -0.3f;
+    private int stepsStuck = 0;
     public override void OnEpisodeBegin()
     {
         transform.localPosition = new Vector3(0f, -3.5f, -1);
         previousDistance = 0f;
-
-        lastPosition = transform.localPosition;
-        stuckCounter = 0;
-        previousMoveDirection = Vector3.zero;
+        stepsStuck = 0;
 
         // Randomly place Pac-Man at one of the spawn points
         if (spawnPoints != null && spawnPoints.Count > 0)
@@ -57,69 +47,54 @@ public class RLAgent : Agent
         { 4, Vector2.left }
     };
 
+
     public override void OnActionReceived(ActionBuffers actions)
     {
         int action = actions.DiscreteActions[0];
-        float speed = 5f;
+        float speed = 20f;
 
         // Move the ghost
         Vector3 moveDirection = actionDict[action] * speed * Time.deltaTime;
 
-        transform.localPosition = new Vector3(
+        Vector3 newPosition = new Vector3(
             transform.localPosition.x + moveDirection.x,
             transform.localPosition.y + moveDirection.y,
-            -1 // Ensure Z remains constant
+            -1
         );
+        
 
-        // Check for back and forth movement
-        if (Vector3.Dot(moveDirection, previousMoveDirection) < 0 && moveDirection.magnitude > 0)
-        {
-            AddReward(backAndForthPenalty);
-            Debug.Log("Back and forth movement detected! Applying penalty.");
-        }
+        transform.localPosition = newPosition;
 
-        // Check if agent is stuck
-        float distanceMoved = Vector3.Distance(transform.localPosition, lastPosition);
-        if (distanceMoved < stuckThreshold)
+        currentDistance = Vector2.Distance(new Vector2(pacman.localPosition.x, pacman.localPosition.y), 
+                                        new Vector2(transform.localPosition.x, transform.localPosition.y));
+
+        AddReward(-0.01f);
+        float proximityReward = 0.1f / (currentDistance + 0.1f);
+        AddReward(proximityReward);
+
+        if (Vector3.Distance(transform.localPosition, newPosition) < 0.01f)
         {
-            stuckCounter++;
-            if (stuckCounter >= maxStuckFrames)
-            {
-                AddReward(stuckPenalty);
-                Debug.Log("Agent is stuck! Applying penalty.");
-                stuckCounter = 0;
-            }
+            stepsStuck++;
         }
         else
         {
-            stuckCounter = 0;
+            stepsStuck = 0;
         }
 
-        lastPosition = transform.localPosition;
-
-        // Store previous move direction
-        previousMoveDirection = moveDirection;
-
-
-        // Update current distance
-        currentDistance = Vector2.Distance(new Vector2(pacman.localPosition.x, pacman.localPosition.y), new Vector2(transform.localPosition.x, transform.localPosition.y));
-
-        // Add step penalty to discourage excessive moves
-        AddReward(-0.01f);
-
-        // Reward inversely proportional to distance (closer = higher reward)
-        float proximityReward = 1.0f / (currentDistance + 0.1f); // Add small epsilon to avoid division by zero
-        AddReward(proximityReward);
-
-        // Success condition: Close enough to catch Pac-Man
-        if (currentDistance < 0.5f)
+        if (stepsStuck >= 50)
         {
-            SetReward(10f); // Large reward for catching Pac-Man
+            AddReward(-20f);
+            EndEpisode();
+            Debug.Log("Agent stuck for 50 steps. Ending Episode");
+        }
+
+        if (currentDistance < 1.0f)
+        {
+            SetReward(100f);
             EndEpisode();
             Debug.Log("Pac-Man caught! Ending Episode");
         }
 
         previousDistance = currentDistance;
-
     }
 }

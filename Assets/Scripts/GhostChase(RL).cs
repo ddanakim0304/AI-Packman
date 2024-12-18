@@ -5,110 +5,69 @@ using Unity.MLAgents.Sensors;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 
-public class GhostChaseRL : Agent, IGhostChase
+public class GhostChaseRL : Agent
 {
+    [SerializeField] private Transform pacman;
+    private float previousDistance = 0f;
+    private float currentDistance;
+    public override void OnEpisodeBegin()
+    {
+        transform.localPosition = new Vector3(0f, 3.5f, -1);
+        previousDistance = 0f;
+    }
 
-    public Ghost ghost { get; private set; }
-    public float duration;
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        sensor.AddObservation(pacman.localPosition);
+        sensor.AddObservation(transform.localPosition);
+    }
 
-
-    public bool IsEnabled => enabled;
-    private float previousDistance;
-    private Dictionary<int, Vector2> actionDict = new Dictionary<int, Vector2>{
-        { 0, Vector2.zero },
-        { 1, Vector2.up },
+    private Dictionary<int, Vector3> actionDict = new Dictionary<int, Vector3>{
+        { 0, Vector3.zero },
+        { 1, Vector3.up },
         { 2, Vector2.down },
         { 3, Vector2.right },
         { 4, Vector2.left }
     };
 
-    protected override void OnDisable()
+        public override void OnActionReceived(ActionBuffers actions)
     {
-        base.OnDisable();
-        ghost.scatter.Enable();
-    }
+        int action = actions.DiscreteActions[0];
+        float speed = 20f;
 
-    public override void OnEpisodeBegin()
-    {
-        // Reset ghost position if needed during training
-        previousDistance = Vector2.Distance(
-            (Vector2)ghost.pacman.position, 
-            (Vector2)transform.position
+        // Move the ghost
+        Vector3 moveDirection = actionDict[action] * speed * Time.deltaTime;
+
+        Vector3 proposedPosition = new Vector3(
+            transform.localPosition.x + moveDirection.x,
+            transform.localPosition.y + moveDirection.y,
+            -1
         );
-        this.ghost = GetComponent<Ghost>();
-    }
 
-    public override void CollectObservations(VectorSensor sensor)
+    // Check for obstacles using raycast
+    RaycastHit2D hit = Physics2D.Raycast(
+        transform.localPosition,
+        moveDirection,
+        moveDirection.magnitude,
+        LayerMask.GetMask("Obstacle")  // Make sure you have an "Obstacle" layer
+    );
+
+    // Only move if no obstacle is hit
+    if (hit.collider == null)
     {
-        sensor.AddObservation((Vector2)ghost.pacman.position);
-        sensor.AddObservation((Vector2)transform.position);
+        transform.localPosition = proposedPosition;
     }
-
-    public override void OnActionReceived(ActionBuffers actions)
+    else
     {
-        // Only use ML actions when not handling node movement
-        if (!ghost.frightened.enabled)
-        {
-            int action = actions.DiscreteActions[0];
-            Vector2 mlDirection = actionDict[action];
-            
-            if (mlDirection != Vector2.zero)
-            {
-                ghost.movement.SetDirection(mlDirection);
-            }
-        }
-    }
+        transform.localPosition = new Vector3(
+            hit.point.x,
+            hit.point.y,
+            -1
+        );
+}
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        Node node = other.GetComponent<Node>();
-
-        if (node != null && enabled && !ghost.frightened.enabled)
-        {
-            Vector2 targetDirection = ((Vector2)ghost.pacman.position - (Vector2)transform.position).normalized;
-            Vector2 bestDirection = Vector2.zero;
-            float maxDot = -1f;
-
-            // Get ML prediction
-            RequestDecision();
-            
-            // Fallback to traditional logic if ML doesn't provide valid direction
-            foreach (Vector2 availableDirection in node.availableDirections)
-            {
-                float dot = Vector2.Dot(targetDirection, availableDirection);
-                if (dot > maxDot)
-                {
-                    maxDot = dot;
-                    bestDirection = availableDirection;
-                }
-            }
-
-            if (bestDirection != Vector2.zero)
-            {
-                ghost.movement.SetDirection(bestDirection);
-            }
-            else
-            {
-                ghost.movement.SetDirection(node.availableDirections[0]);
-            }
-        }
-    }
-
-    public override void Heuristic(in ActionBuffers actionsOut)
-    {
-        // Implement manual control for testing if needed
-        var discreteActionsOut = actionsOut.DiscreteActions;
-        discreteActionsOut[0] = 0;
-    }
-
-        public void Enable()
-    {
-        enabled = true;
-    }
-
-    public void Disable()
-    {
-        enabled = false;
-        OnDisable();
+        currentDistance = Vector2.Distance(new Vector2(pacman.localPosition.x, pacman.localPosition.y), 
+                                        new Vector2(transform.localPosition.x, transform.localPosition.y));
+        previousDistance = currentDistance;
     }
 }
