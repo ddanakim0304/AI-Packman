@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+env/python_env/lib/python3.10/site-packages/numpy/.dylibs/libopenblas64_.0.dylib filter=lfs diff=lfs merge=lfs -text
+env/python_env/lib/python3.10/site-packages/torch/lib/libtorch_cpu.dylib filter=lfs diff=lfs merge=lfs -text
