@@ -121,4 +121,4 @@ test-report.xml
 rever/
 
 # setuptools-scm
-conda/_version.py
+conda/_version.pyenv/
