@@ -292,12 +292,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 800, y: 600}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -907,6 +907,7 @@ GameObject:
   - component: {fileID: 788974415}
   - component: {fileID: 788974414}
   - component: {fileID: 788974417}
+  - component: {fileID: 788974418}
   m_Layer: 5
   m_Name: Play Button
   m_TagString: Untagged
@@ -977,7 +978,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 788974415}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 788974418}
+        m_TargetAssemblyTypeName: Menu, Assembly-CSharp
+        m_MethodName: PlayGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &788974415
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1032,6 +1045,18 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   clickedColor: {r: 1, g: 0.5481836, b: 0, a: 1}
+--- !u!114 &788974418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788974412}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9f3af2ba18b34bd883b7a97651a57a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1005929786
 GameObject:
   m_ObjectHideFlags: 0
@@ -1045,6 +1070,7 @@ GameObject:
   - component: {fileID: 1005929789}
   - component: {fileID: 1005929788}
   - component: {fileID: 1005929791}
+  - component: {fileID: 1005929792}
   m_Layer: 5
   m_Name: Test Button
   m_TagString: Untagged
@@ -1115,7 +1141,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1005929789}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 788974418}
+        m_TargetAssemblyTypeName: Menu, Assembly-CSharp
+        m_MethodName: TestGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1005929789
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1170,6 +1208,18 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   clickedColor: {r: 1, g: 0.5481836, b: 0, a: 1}
+--- !u!114 &1005929792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1005929786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9f3af2ba18b34bd883b7a97651a57a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1111176745
 GameObject:
   m_ObjectHideFlags: 0
@@ -1586,7 +1636,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Test AI
+  m_text: "Test AI \n- CS152"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: bd4f46af15c304e50a3ae14d69c91e4f, type: 2}
   m_sharedMaterial: {fileID: -68172023172633771, guid: bd4f46af15c304e50a3ae14d69c91e4f, type: 2}

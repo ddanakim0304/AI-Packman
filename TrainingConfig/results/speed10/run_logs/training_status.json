@@ -1,0 +1,38 @@
+{
+    "GhostRLAgent": {
+        "checkpoints": [
+            {
+                "steps": 57693,
+                "file_path": "results/test/GhostRLAgent/GhostRLAgent-57693.onnx",
+                "reward": null,
+                "creation_time": 1734555762.640165,
+                "auxillary_file_paths": [
+                    "results/test/GhostRLAgent/GhostRLAgent-57693.pt"
+                ]
+            },
+            {
+                "steps": 322896,
+                "file_path": "results/test/GhostRLAgent/GhostRLAgent-322896.onnx",
+                "reward": 226.46238327026367,
+                "creation_time": 1734556196.985276,
+                "auxillary_file_paths": [
+                    "results/test/GhostRLAgent/GhostRLAgent-322896.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 322896,
+            "file_path": "results/test/GhostRLAgent.onnx",
+            "reward": 226.46238327026367,
+            "creation_time": 1734556196.985276,
+            "auxillary_file_paths": [
+                "results/test/GhostRLAgent/GhostRLAgent-322896.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "1.1.0",
+        "torch_version": "2.2.2"
+    }
+}
