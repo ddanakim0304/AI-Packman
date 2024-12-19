@@ -122,3 +122,4 @@ rever/
 
 # setuptools-scm
 conda/_version.pyenv/
+env/
