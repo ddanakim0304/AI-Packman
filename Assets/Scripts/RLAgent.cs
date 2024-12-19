@@ -81,7 +81,7 @@ public class RLAgent : Agent
             stepsStuck = 0;
         }
 
-        if (stepsStuck >= 50)
+        if (stepsStuck >= 200)
         {
             AddReward(-20f);
             EndEpisode();
