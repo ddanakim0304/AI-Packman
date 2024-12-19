@@ -7,32 +7,29 @@ public class GameManager : MonoBehaviour
     public Ghost[] ghosts;
     public Pacman pacman;
     public Transform pellets;
+    public GameObject gameCompletedCanvas;
+    public GameObject gameOverCanvas;
 
     public int ghostMultiplier { get; private set; } = 1;
     public int score { get; private set; }
-    public int lives { get; private set; }
+    public int lives { get; private set; } = 3;
 
     private void Start()
     {
-        // Initialize a new game when the scene starts
-        NewGame();
+        gameCompletedCanvas.SetActive(false);
+        gameOverCanvas.SetActive(false);
+        Time.timeScale = 1;
+        // Start the first round when the scene starts
+        NewRound();
     }
 
     private void Update()
     {
-        // Restart the game if lives are depleted and any key is pressed
-        if (this.lives <= 0 && Input.anyKeyDown)
+        // Check if lives are depleted and pause the game
+        if (this.lives <= 0)
         {
-            NewGame();
+            GameOver();
         }
-    }
-
-    private void NewGame()
-    {
-        // Reset score and lives, then start a new round
-        SetScore(0);
-        SetLives(3);
-        NewRound();
     }
 
     private void NewRound()
@@ -49,11 +46,15 @@ public class GameManager : MonoBehaviour
 
     private void ResetState()
     {
+        gameCompletedCanvas.SetActive(false);
+        gameOverCanvas.SetActive(false);
+
         ResetGhostMultiplier();
+        
         // Activate all ghosts
-        for (int i = 0; i < ghosts.Length; i++)
+        foreach (Ghost ghost in this.ghosts)
         {
-            this.ghosts[i].ResetState();
+            ghost.ResetState();
         }
 
         // Activate Pacman
@@ -62,10 +63,11 @@ public class GameManager : MonoBehaviour
 
     private void GameOver()
     {
+        gameOverCanvas.SetActive(true);
         // Deactivate all ghosts
-        for (int i = 0; i < ghosts.Length; i++)
+        foreach (Ghost ghost in this.ghosts)
         {
-            ghosts[i].gameObject.SetActive(false);
+            ghost.gameObject.SetActive(false);
         }
 
         // Deactivate Pacman
@@ -79,12 +81,6 @@ public class GameManager : MonoBehaviour
     {
         // Update the score
         this.score = score;
-    }
-
-    private void SetLives(int lives)
-    {
-        // Update the number of lives
-        this.lives = lives;
     }
 
     public void GhostEaten(Ghost ghost)
@@ -104,7 +100,7 @@ public class GameManager : MonoBehaviour
         if (lives > 0)
         {
             // Reset game state after 3 seconds if lives remain
-            Invoke(nameof(ResetState), 3.0f);
+            Invoke(nameof(ResetState), 2.0f);
         }
         else
         {
@@ -120,22 +116,22 @@ public class GameManager : MonoBehaviour
 
         if (!HasRemainingPellets())
         {
-            this.pacman.gameObject.SetActive(false);
-            Invoke(nameof(NewRound), 3.0f);
+            GameCompleted();
         }
     }
 
     public void PowerPelletEaten(PowerPellet pellet)
     {
-        for (int i = 0; i < ghosts.Length; i++) {
-            ghosts[i].frightened.Enable(pellet.duration);
+        foreach (Ghost ghost in this.ghosts)
+        {
+            ghost.frightened.Enable(pellet.duration);
         }
 
         PelletEaten(pellet);
         CancelInvoke(nameof(ResetGhostMultiplier));
         Invoke(nameof(ResetGhostMultiplier), pellet.duration);
     }
-    
+
     private bool HasRemainingPellets()
     {
         // Check if any pellets are still active
@@ -150,8 +146,26 @@ public class GameManager : MonoBehaviour
         return false;
     }
 
+    private void GameCompleted()
+    {
+        // Show the Game Completed Canvas
+        if (gameCompletedCanvas != null)
+        {
+            gameCompletedCanvas.SetActive(true);
+        }
+
+        // Stop the game
+        Time.timeScale = 0;
+    }
+
     private void ResetGhostMultiplier()
     {
         this.ghostMultiplier = 1;
+    }
+
+    private void SetLives(int lives)
+    {
+        // Update the number of lives
+        this.lives = lives;
     }
 }
