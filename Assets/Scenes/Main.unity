@@ -448,6 +448,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7869347127706966833, guid: 9817199d69e044646b89c99662e181b5, type: 3}
+      propertyPath: pacman
+      value: 
+      objectReference: {fileID: 656308241}
+    - target: {fileID: 7869347127706966833, guid: 9817199d69e044646b89c99662e181b5, type: 3}
       propertyPath: target
       value: 
       objectReference: {fileID: 656308241}
@@ -11364,6 +11368,10 @@ PrefabInstance:
       value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 2538635990530796742, guid: 3b7c4606a5ff84cefb99ed4dfce697c7, type: 3}
+      propertyPath: pacman
+      value: 
+      objectReference: {fileID: 656308241}
+    - target: {fileID: 2538635990530796742, guid: 3b7c4606a5ff84cefb99ed4dfce697c7, type: 3}
       propertyPath: target
       value: 
       objectReference: {fileID: 656308241}
@@ -11919,6 +11927,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9093172915997962136, guid: 4630c6cee20d44d869a5cb4a01c44090, type: 3}
+      propertyPath: pacman
+      value: 
+      objectReference: {fileID: 656308241}
     - target: {fileID: 9093172915997962136, guid: 4630c6cee20d44d869a5cb4a01c44090, type: 3}
       propertyPath: target
       value: 
@@ -12859,7 +12871,7 @@ GameObject:
   - component: {fileID: 9193675908865964086}
   - component: {fileID: 920611279709958787}
   m_Layer: 7
-  m_Name: Ghost_Cyan (1)
+  m_Name: ghost image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13894,7 +13906,7 @@ GameObject:
   - component: {fileID: 1674475567034068474}
   - component: {fileID: 7236222729197922127}
   m_Layer: 7
-  m_Name: Ghost_Pink (1)
+  m_Name: ghost image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14447,7 +14459,7 @@ GameObject:
   - component: {fileID: 1078973408250907661}
   - component: {fileID: 9054940094845322936}
   m_Layer: 7
-  m_Name: Ghost_Orange (1)
+  m_Name: ghost image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14499,7 +14511,7 @@ GameObject:
   - component: {fileID: 794405906565172306}
   - component: {fileID: 8671293389412222695}
   m_Layer: 7
-  m_Name: Ghost_Red (1)
+  m_Name: ghost image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

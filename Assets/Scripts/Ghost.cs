@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
 
 public class Ghost : MonoBehaviour
 {
+    public bool TestMode = false;
     public Movement movement { get; private set; }
 
     public GhostHome home { get; private set; }
@@ -13,22 +15,17 @@ public class Ghost : MonoBehaviour
     public GhostBehavior initialBehavior;
 
     public Transform pacman;
+    public TestManager testManager;
 
     public int points = 200;
 
     private void Awake()
     {
-        pacman = GameObject.FindGameObjectWithTag("Player").transform;
         this.movement = GetComponent<Movement>();
         this.home = GetComponent<GhostHome>();
         this.scatter = GetComponent<GhostScatter>();
         this.chase = GetComponent<IGhostChase>();
         this.frightened = GetComponent<GhostFrightened>();
-
-        // Fallback to A* chase if no specific chase behavior is assigned
-        if (chase == null) {
-            chase = GetComponent<GhostChaseAstar>();
-        }
     }
 
     private void Start()
@@ -54,20 +51,38 @@ public class Ghost : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision){
-        
-        if (collision.gameObject.CompareTag("Player"))
+private void OnCollisionEnter2D(Collision2D collision)
+{
+    if (collision.gameObject.CompareTag("Player"))
+    {
+        if (this.frightened.enabled)
         {
-            if (this.frightened.enabled)
+            // Check for GameManager or TestManager and call the appropriate method
+            var gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
             {
-                FindObjectOfType<GameManager>().GhostEaten(this);
+                gameManager.GhostEaten(this);
+                return;
             }
-            else
+        }
+        else
+        {
+            // Check for GameManager or TestManager and call the appropriate method
+            var gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
             {
-                FindObjectOfType<GameManager>().PacmanEaten();
+                gameManager.PacmanEaten();
+                return;
+            }
+
+            if (testManager != null)
+            {
+                testManager.IncrementPacmanCaught();
             }
         }
     }
+}
+
 
     public void SetPosition(Vector3 position)
     {

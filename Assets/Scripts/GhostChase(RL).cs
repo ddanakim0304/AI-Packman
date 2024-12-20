@@ -8,14 +8,31 @@ using Unity.VisualScripting;
 public class GhostChaseRL : Agent
 {
     [SerializeField] private Transform pacman;
+    [SerializeField] private List<Transform> spawnPoints;
     private float previousDistance = 0f;
     private float currentDistance;
+    [SerializeField] private int pacmanCaughtCounter = 0;
     public override void OnEpisodeBegin()
     {
-        transform.localPosition = new Vector3(0f, 3.5f, -1);
+        transform.localPosition = new Vector3(0f, -3.5f, -1);
         previousDistance = 0f;
-    }
 
+        // Randomly place Pac-Man at one of the spawn points
+        if (spawnPoints != null && spawnPoints.Count > 0)
+        {
+            // Reset the ghost's position
+            int randomIndex1 = Random.Range(0, spawnPoints.Count);
+            Vector3 ghostPosition = spawnPoints[randomIndex1].localPosition;
+            transform.localPosition = new Vector3(ghostPosition.x, ghostPosition.y, -1); // Constant Z
+
+            
+            int randomIndex2 = Random.Range(0, spawnPoints.Count);
+            Vector3 pacmanPosition = spawnPoints[randomIndex2].localPosition;
+            pacman.localPosition = new Vector3(pacmanPosition.x, pacmanPosition.y, -5);
+        }
+
+        
+    }
     public override void CollectObservations(VectorSensor sensor)
     {
         sensor.AddObservation(pacman.localPosition);
@@ -44,30 +61,18 @@ public class GhostChaseRL : Agent
             -1
         );
 
-    // Check for obstacles using raycast
-    RaycastHit2D hit = Physics2D.Raycast(
-        transform.localPosition,
-        moveDirection,
-        moveDirection.magnitude,
-        LayerMask.GetMask("Obstacle")  // Make sure you have an "Obstacle" layer
-    );
-
-    // Only move if no obstacle is hit
-    if (hit.collider == null)
-    {
         transform.localPosition = proposedPosition;
-    }
-    else
-    {
-        transform.localPosition = new Vector3(
-            hit.point.x,
-            hit.point.y,
-            -1
-        );
-}
 
         currentDistance = Vector2.Distance(new Vector2(pacman.localPosition.x, pacman.localPosition.y), 
                                         new Vector2(transform.localPosition.x, transform.localPosition.y));
+
+        if (currentDistance < 1.0f)
+        {
+            pacmanCaughtCounter++;
+            EndEpisode();
+        }
         previousDistance = currentDistance;
     }
+
+
 }

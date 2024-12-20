@@ -208,7 +208,7 @@ public class GhostChaseQLearning : GhostBehavior, IGhostChase
 
     private float CalculateReward(Node prev, Node current, Vector2 pacmanPos, Vector2 ghostPos)
     {
-        // Example: reward for moving closer to predicted Pac-Man position
+        // reward for moving closer to Pac-Man position
         float prevDist = Vector2.Distance(prev.transform.position, pacmanPos);
         float currDist = Vector2.Distance(current.transform.position, pacmanPos);
 
