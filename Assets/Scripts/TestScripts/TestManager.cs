@@ -10,9 +10,22 @@ public class TestManager : MonoBehaviour
     [SerializeField] private float ghostZOffset = -1f;
     [SerializeField] private float pacmanZOffset = -5f;
     [SerializeField] private TextMeshProUGUI counterText;
+    private float timeoutTimer = 0f;
+    public const float timeoutDuration = 40f;
 
     // Track how many times Pacman was caught
-    private int pacmanCaughtCount = 0;                   
+    private int pacmanCaughtCount = 0;      
+
+        private void Update()
+    {
+        timeoutTimer += Time.deltaTime;
+        
+        if (timeoutTimer >= timeoutDuration)
+        {
+            timeoutTimer = 0f;
+            SpawnActors();
+        }
+    }             
 
     private void Start()
     {
@@ -62,7 +75,7 @@ public class TestManager : MonoBehaviour
     {
         pacmanCaughtCount++;
         UpdateCounterText();
-        Debug.Log($"Pacman caught count: {pacmanCaughtCount}");
+        timeoutTimer = 0f;
         SpawnActors();
     }
 }
