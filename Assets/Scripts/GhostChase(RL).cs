@@ -3,17 +3,37 @@ using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+using TMPro; 
 
 public class GhostChaseRL : Agent
 {
+    [SerializeField] private TextMeshProUGUI counterText;
     [SerializeField] private Transform pacman;
     [SerializeField] private List<Transform> spawnPoints;
     private float previousDistance = 0f;
     private float currentDistance;
     [SerializeField] private int pacmanCaughtCounter = 0;
+    private float episodeTimer = 0f;
+
+
+    private void Update()
+    {
+        if (counterText != null)
+        {
+            counterText.text = $"Counter: {pacmanCaughtCounter}";
+        }
+
+        // Update timer and check for timeout
+        episodeTimer += Time.deltaTime;
+        if (episodeTimer >= 40f)
+        {
+            EndEpisode();
+        }
+    }
+
     public override void OnEpisodeBegin()
     {
+        episodeTimer = 0f;
         transform.localPosition = new Vector3(0f, -3.5f, -1);
         previousDistance = 0f;
 
