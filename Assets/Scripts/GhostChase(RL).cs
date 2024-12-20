@@ -20,7 +20,7 @@ public class GhostChaseRL : Agent
     {
         if (counterText != null)
         {
-            counterText.text = $"Counter: {pacmanCaughtCounter}";
+            counterText.text = $"Count: {pacmanCaughtCounter}";
         }
 
         // Update timer and check for timeout

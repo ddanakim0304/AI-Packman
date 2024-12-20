@@ -75,6 +75,8 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
+/ML-Agents
+
 *~
 *.pyc
 *.egg-info
@@ -125,3 +127,11 @@ conda/_version.pyenv/
 env/
 ..bfg-report/2024-12-19/12-47-36/cache-stats.txt
 ..bfg-report/2024-12-19/12-47-36/object-id-map.old-new.txt
+Assets/ML-Agents/Timers/Menu_timers.json
+Assets/ML-Agents/Timers/Menu_timers.json.meta
+Assets/ML-Agents/Timers/Test Mode_timers.json
+Assets/Resources/PerformanceTestRunInfo.json
+Assets/Resources/PerformanceTestRunInfo.json.meta
+Assets/Resources/PerformanceTestRunSettings.json
+Assets/Resources/PerformanceTestRunSettings.json.meta
+Assets/ML-Agents/Timers/Test Mode_timers.json
